@@ -21,7 +21,12 @@ export async function loginAndSetSession(
   const loginRes = await loginUser({ email, password });
 
   if (loginRes.error || !loginRes.data?.token) {
-    return loginRes;
+    return {
+      data: null,
+      error: loginRes.error,
+      errorUserMessage: loginRes.errorUserMessage,
+      status: loginRes.status,
+    };
   }
 
   const token = loginRes.data.token;
