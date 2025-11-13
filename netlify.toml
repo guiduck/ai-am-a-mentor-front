@@ -1,0 +1,12 @@
+[build]
+  command = "npm run build"
+  # DO NOT set a publish directory when using @netlify/plugin-nextjs
+  # The plugin handles this automatically
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Ensure functions work properly
+[functions]
+  node_bundler = "esbuild"
+
