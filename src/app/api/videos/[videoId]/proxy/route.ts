@@ -18,10 +18,7 @@ export async function GET(
 
     if (!token) {
       console.error("No authentication token found in cookie or header");
-      return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     console.log("Token found, proxying video request...");
@@ -57,16 +54,16 @@ export async function GET(
 
     // Build headers object to forward from backend
     const headers = new Headers();
-    
+
     // Copy all relevant headers from backend response
     const contentType = response.headers.get("content-type");
     const contentLength = response.headers.get("content-length");
     const contentRange = response.headers.get("content-range");
-    
+
     if (contentType) headers.set("Content-Type", contentType);
     if (contentLength) headers.set("Content-Length", contentLength);
     if (contentRange) headers.set("Content-Range", contentRange);
-    
+
     headers.set("Accept-Ranges", "bytes");
     headers.set("Cache-Control", "public, max-age=3600");
 
@@ -82,7 +79,7 @@ export async function GET(
 
     // Stream the video response (don't load entire video into memory)
     const stream = response.body;
-    
+
     if (!stream) {
       console.error("No stream body in backend response");
       return NextResponse.json(
@@ -107,7 +104,9 @@ export async function GET(
     });
 
     // Log when the response is actually sent (not when it's created)
-    console.log("✅ Video response created, streaming will start automatically");
+    console.log(
+      "✅ Video response created, streaming will start automatically"
+    );
 
     return videoResponse;
   } catch (error) {
@@ -118,4 +117,3 @@ export async function GET(
     );
   }
 }
-
