@@ -18,9 +18,14 @@ export async function loginAndSetSession(
   email: string,
   password: string
 ): Promise<APIResponse<{ access_token: string }> | null> {
+  console.log("[login] attempt", { email });
   const loginRes = await loginUser({ email, password });
 
   if (loginRes.error || !loginRes.data?.token) {
+    console.warn("[login] failed", {
+      status: loginRes.status,
+      errorUserMessage: loginRes.errorUserMessage,
+    });
     return {
       data: null,
       error: loginRes.error,
@@ -31,6 +36,7 @@ export async function loginAndSetSession(
 
   const token = loginRes.data.token;
   const cookieStore = await cookies();
+  console.log("[login] success, setting cookies");
 
   // Set the access token cookie first
   cookieStore.set("access_token", token, {
@@ -51,6 +57,10 @@ export async function loginAndSetSession(
 
     if (!userResponse.error && userResponse.data) {
       const userData = userResponse.data;
+      console.log("[login] fetched user info", {
+        userId: userData.id,
+        role: userData.role,
+      });
 
       // Set user role and data cookies
       cookieStore.set("user_role", userData.role, {
@@ -74,6 +84,7 @@ export async function loginAndSetSession(
         errorUserMessage: "",
       };
     } else {
+      console.error("[login] failed to fetch user data", userResponse);
       return {
         data: null,
         error: true,
@@ -82,7 +93,7 @@ export async function loginAndSetSession(
       };
     }
   } catch (error) {
-    console.error("Error fetching user data:", error);
+    console.error("[login] Error fetching user data:", error);
     return {
       data: null,
       error: true,

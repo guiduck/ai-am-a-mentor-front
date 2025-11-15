@@ -9,10 +9,18 @@ export function middleware(req: NextRequest) {
   const isPublicRoute = publicRoutes.includes(req.nextUrl.pathname);
   const pathname = req.nextUrl.pathname;
 
+  console.log("[middleware] request", {
+    pathname,
+    hasToken: Boolean(token),
+    userRole: userRole ?? "none",
+    isPublicRoute,
+  });
+
   // AUTHENTICATION: Redirect to login if no token and not on public route
   if (!token && !isPublicRoute) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
+    console.log("[middleware] redirect -> /login (missing token)");
     return NextResponse.redirect(url);
   }
 
@@ -20,6 +28,7 @@ export function middleware(req: NextRequest) {
   if (token && isPublicRoute) {
     const url = req.nextUrl.clone();
     url.pathname = "/dashboard";
+    console.log("[middleware] redirect authenticated user from public -> /dashboard");
     return NextResponse.redirect(url);
   }
 
@@ -33,6 +42,7 @@ export function middleware(req: NextRequest) {
       } else if (userRole === "student") {
         url.pathname = "/dashboard/student";
       }
+      console.log("[middleware] redirect /dashboard to", url.pathname);
       return NextResponse.redirect(url);
     }
 
@@ -40,12 +50,14 @@ export function middleware(req: NextRequest) {
     if (pathname.startsWith("/dashboard/creator") && userRole !== "creator") {
       const url = req.nextUrl.clone();
       url.pathname = "/dashboard/student";
+      console.warn("[middleware] creator route blocked for role", userRole);
       return NextResponse.redirect(url);
     }
 
     if (pathname.startsWith("/dashboard/student") && userRole !== "student") {
       const url = req.nextUrl.clone();
       url.pathname = "/dashboard/creator";
+      console.warn("[middleware] student route blocked for role", userRole);
       return NextResponse.redirect(url);
     }
 
@@ -53,10 +65,12 @@ export function middleware(req: NextRequest) {
     if (pathname.startsWith("/courses/create") && userRole !== "creator") {
       const url = req.nextUrl.clone();
       url.pathname = "/dashboard";
+      console.warn("[middleware] /courses/create blocked for role", userRole);
       return NextResponse.redirect(url);
     }
   }
 
+  console.log("[middleware] allow request", pathname);
   return NextResponse.next();
 }
 
