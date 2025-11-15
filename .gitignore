@@ -90,7 +90,6 @@ yarn-error.log*
 
 # Sensitive data patterns (extra protection)
 *secret*
-*private*
 *key*
 *.pem
 *.key
