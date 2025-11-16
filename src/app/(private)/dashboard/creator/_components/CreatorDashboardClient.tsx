@@ -6,19 +6,24 @@ import { useAuthStore, type User } from "@/stores/authStore";
 import { logoutUser } from "@/actions/logout";
 import { getCoursesByCreator, Course } from "@/services/courses";
 import { initializeAuthFromAPI } from "@/lib/auth-utils";
+import { getCourseVideos } from "@/services/videos";
 import { Button } from "@/components/ui/Button/Button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/Card/Card";
 import styles from "../page.module.css";
 import { toast } from "sonner";
 
 interface CreatorDashboardClientProps {
   initialUser: User | null;
 }
+
+const parsePrice = (price: string) => {
+  const normalized = price
+    .toString()
+    .replace(/[^\d,.,-]/g, "")
+    .replace(/\.(?=.*\.)/g, "")
+    .replace(",", ".");
+  const value = Number(normalized);
+  return Number.isNaN(value) ? 0 : value;
+};
 
 export default function CreatorDashboardClient({
   initialUser,
@@ -31,6 +36,7 @@ export default function CreatorDashboardClient({
   const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalLessons, setTotalLessons] = useState(0);
 
   useEffect(() => {
     if (!user && initialUser) {
@@ -58,6 +64,21 @@ export default function CreatorDashboardClient({
     try {
       const creatorCourses = await getCoursesByCreator();
       setCourses(creatorCourses);
+      const lessonCounts = await Promise.all(
+        creatorCourses.map(async (course) => {
+          try {
+            const videos = await getCourseVideos(course.id);
+            return videos.length;
+          } catch (error) {
+            console.error(
+              "[dashboard/creator/client] Error counting videos:",
+              error
+            );
+            return 0;
+          }
+        })
+      );
+      setTotalLessons(lessonCounts.reduce((sum, count) => sum + count, 0));
       console.log("[dashboard/creator/client] loadCourses success", {
         count: creatorCourses.length,
       });
@@ -86,100 +107,151 @@ export default function CreatorDashboardClient({
     router.push("/courses/manage");
   };
 
+  const totalRevenue = courses.reduce(
+    (sum, course) => sum + parsePrice(course.price),
+    0
+  );
+
+  const recentCourses = courses.slice(0, 3);
+
   return (
-    <div className={styles.container}>
-      <div className={styles.innerContainer}>
-        <div className={styles.header}>
-          <div className={styles.headerContent}>
-            <h1>Dashboard do Criador</h1>
-            <p>Bem-vindo de volta, {user?.username || "Criador"}!</p>
+    <div className={styles.page}>
+      <div className={styles.heroCard}>
+        <div className={styles.heroContent}>
+          <p className={styles.heroKicker}>Dashboard do criador</p>
+          <h1>
+            Bem-vindo, {user?.username || "Criador"}. Transforme suas ideias em
+            trilhas de aprendizado.
+          </h1>
+          <p>
+            Organize cursos, publique novas aulas e acompanhe o desempenho da
+            sua comunidade com um painel inspirado no melhor do Codecademy.
+          </p>
+          <div className={styles.heroActions}>
+            <Button variant="primary" onClick={handleCreateCourse}>
+              Novo curso
+            </Button>
+            <Button variant="outline" onClick={handleViewCourses}>
+              Gerenciar biblioteca
+            </Button>
+            <Button variant="ghost" onClick={handleLogout}>
+              Sair
+            </Button>
           </div>
-          <Button onClick={handleLogout} variant="outline">
-            Sair
+        </div>
+
+          <div className={styles.heroStats}>
+            <div>
+              <span>{courses.length}</span>
+              <p>Cursos publicados</p>
+            </div>
+            <div>
+              <span>
+                {new Intl.NumberFormat("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                }).format(totalRevenue)}
+              </span>
+              <p>Potencial de faturamento</p>
+            </div>
+            <div>
+              <span>{totalLessons} aulas</span>
+              <p>Conteúdos mentorados</p>
+            </div>
+          </div>
+      </div>
+
+      <section className={styles.insightsGrid}>
+        <div className={styles.insightCard}>
+          <p className={styles.insightLabel}>Planos em destaque</p>
+          <h3>Crie uma nova trilha com IA</h3>
+          <p>
+            Combine aulas gravadas com atividades práticas e deixe a mentoria
+            inteligente personalizar os próximos passos dos alunos.
+          </p>
+          <Button variant="primary" size="small" onClick={handleCreateCourse}>
+            Começar agora
           </Button>
         </div>
 
-        <div className={styles.cardsGrid}>
-          <Card variant="elevated">
-            <CardHeader>
-              <CardTitle>Meus Cursos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className={styles.cardDescription}>
-                {loading
-                  ? "Carregando..."
-                  : `Você tem ${courses.length} curso${
-                      courses.length !== 1 ? "s" : ""
-                    } criado${courses.length !== 1 ? "s" : ""}.`}
-              </p>
-              <Button
-                onClick={handleViewCourses}
-                variant="primary"
-                size="small"
-              >
-                Ver Cursos
-              </Button>
-            </CardContent>
-          </Card>
+        <div className={styles.insightCard}>
+          <p className={styles.insightLabel}>Engajamento</p>
+          <h3>Envie uma atualização para seus alunos</h3>
+          <p>
+            Conteúdos recentes recebem 32% mais visualizações quando você envia
+            um resumo semanal. Use este espaço para destacar novidades.
+          </p>
+          <Button variant="outline" size="small" onClick={handleViewCourses}>
+            Abrir centro de mensagens
+          </Button>
+        </div>
+      </section>
 
-          <Card variant="elevated">
-            <CardHeader>
-              <CardTitle>Criar Curso</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className={styles.cardDescription}>
-                Crie um novo curso com vídeos e mentoria de IA.
-              </p>
-              <Button
-                onClick={handleCreateCourse}
-                variant="primary"
-                size="small"
-              >
-                Novo Curso
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card variant="elevated">
-            <CardHeader>
-              <CardTitle>Estatísticas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className={styles.cardDescription}>
-                Veja o desempenho dos seus cursos e estudantes.
-              </p>
-              <Button variant="primary" size="small">
-                Ver Stats
-              </Button>
-            </CardContent>
-          </Card>
+      <section className={styles.courseSection}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <p className={styles.sectionKicker}>Biblioteca</p>
+            <h2>Últimos cursos publicados</h2>
+          </div>
+          <Button variant="outline" onClick={handleViewCourses}>
+            Ver todos
+          </Button>
         </div>
 
-        <div className={styles.accountInfo}>
-          <Card variant="default">
-            <CardHeader>
-              <CardTitle>Informações da Conta</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className={styles.infoList}>
-                <p className={styles.infoItem}>
-                  <span className={styles.infoLabel}>ID:</span> {user?.id}
-                </p>
-                <p className={styles.infoItem}>
-                  <span className={styles.infoLabel}>Nome:</span>{" "}
-                  {user?.username}
-                </p>
-                <p className={styles.infoItem}>
-                  <span className={styles.infoLabel}>Email:</span> {user?.email}
-                </p>
-                <p className={styles.infoItem}>
-                  <span className={styles.infoLabel}>Tipo:</span> Criador
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+        {loading ? (
+          <div className={styles.emptyState}>Carregando cursos...</div>
+        ) : recentCourses.length === 0 ? (
+          <div className={styles.emptyState}>
+            Você ainda não publicou cursos. Que tal criar o primeiro?
+          </div>
+        ) : (
+          <div className={styles.courseList}>
+            {recentCourses.map((course) => (
+              <article key={course.id} className={styles.courseRow}>
+                <div>
+                  <h3>{course.title}</h3>
+                  <p>{course.description}</p>
+                </div>
+                <div className={styles.courseRowMeta}>
+                  <span>
+                    Atualizado em{" "}
+                    {new Date(course.updatedAt).toLocaleDateString("pt-BR")}
+                  </span>
+                  <Button
+                    variant="primary"
+                    size="small"
+                    onClick={() => router.push(`/course/${course.id}`)}
+                  >
+                    Abrir curso
+                  </Button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className={styles.accountCard}>
+        <h3>Informações da conta</h3>
+        <div className={styles.accountGrid}>
+          <div>
+            <span>ID</span>
+            <strong>{user?.id}</strong>
+          </div>
+          <div>
+            <span>Nome</span>
+            <strong>{user?.username}</strong>
+          </div>
+          <div>
+            <span>Email</span>
+            <strong>{user?.email}</strong>
+          </div>
+          <div>
+            <span>Função</span>
+            <strong>Criador</strong>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

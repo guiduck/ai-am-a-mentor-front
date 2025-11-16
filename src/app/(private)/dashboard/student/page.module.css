@@ -1,74 +1,286 @@
-.container {
+.page {
   min-height: 100vh;
-  background-color: var(--bg-secondary);
+  padding: var(--space-8) var(--space-4) var(--space-16);
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.heroCard {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8);
+  border: 2px solid var(--color-gray-900);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  transition: var(--transition-base);
+}
+
+.heroCard:hover {
+  box-shadow: 14px 14px 0 var(--color-primary);
+}
+
+.heroContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.heroKicker {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--color-gray-900);
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-3);
+  align-self: flex-start;
+}
+
+.heroContent h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.1;
+}
+
+.heroContent p {
+  font-size: var(--text-lg);
+  color: var(--text-secondary);
+  max-width: 800px;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.heroStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+.heroStats div {
+  background: var(--color-gray-900);
+  color: var(--color-white);
+  border-radius: var(--radius-xl);
   padding: var(--space-4);
+  text-align: center;
+  box-shadow: var(--shadow-lg);
 }
 
-.innerContainer {
-  max-width: 1200px;
-  margin: 0 auto;
+.heroStats span {
+  display: block;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
 }
 
-.header {
+.heroStats p {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  opacity: 0.85;
+}
+
+.progressSection {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--color-gray-200);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-base);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.sectionHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-8);
+  gap: var(--space-3);
 }
 
-.headerContent h1 {
-  font-size: var(--text-3xl);
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
-  margin: 0 0 var(--space-2) 0;
+.sectionHeader h2 {
+  font-size: var(--text-2xl);
 }
 
-.headerContent p {
+.sectionKicker {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: var(--text-secondary);
-  font-size: var(--text-base);
+}
+
+.progressBadge {
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-gray-900);
+  padding: var(--space-1) var(--space-3);
+  font-weight: var(--font-semibold);
+}
+
+.progressBar {
+  width: 100%;
+  height: 12px;
+  border-radius: var(--radius-full);
+  background: var(--color-gray-200);
+  overflow: hidden;
+}
+
+.progressBar div {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  border-radius: var(--radius-full);
+}
+
+.progressActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.courseSection {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--color-gray-200);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-base);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.courseList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.courseRow {
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  transition: var(--transition-base);
+  background: var(--bg-primary);
+}
+
+.courseRow:hover {
+  border-color: var(--color-gray-900);
+  box-shadow: var(--shadow-md);
+}
+
+.courseRow h3 {
+  margin: 0 0 var(--space-2);
+}
+
+.courseRow p {
   margin: 0;
-}
-
-.cardsGrid {
-  display: grid;
-  gap: var(--space-6);
-  margin-bottom: var(--space-8);
-}
-
-@media (min-width: 768px) {
-  .cardsGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .cardsGrid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.cardDescription {
   color: var(--text-secondary);
-  margin-bottom: var(--space-4);
-  font-size: var(--text-base);
+  max-width: 520px;
 }
 
-.accountInfo {
-  margin-top: var(--space-8);
-}
-
-.infoList {
+.courseRowMeta {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  align-items: flex-end;
 }
 
-.infoItem {
-  font-size: var(--text-base);
-  color: var(--text-primary);
+.courseRowMeta span {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.featuredCard {
+  background: var(--color-gray-900);
+  color: var(--color-white);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-6);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  align-items: center;
+  box-shadow: var(--shadow-lg);
+}
+
+.featuredCard h3 {
+  margin: var(--space-2) 0;
+}
+
+.featuredCard p {
   margin: 0;
+  opacity: 0.8;
 }
 
-.infoLabel {
-  font-weight: var(--font-semibold);
+.accountCard {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--color-gray-200);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-base);
+}
+
+.accountCard h3 {
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-4);
+}
+
+.accountGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+.accountGrid div {
+  border: 1px dashed var(--color-gray-300);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+}
+
+.accountGrid span {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.accountGrid strong {
+  display: block;
+  font-size: var(--text-lg);
+  margin-top: var(--space-2);
+}
+
+.emptyState {
+  text-align: center;
+  color: var(--text-secondary);
+  border: 2px dashed var(--color-gray-300);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+}
+
+@media (max-width: 768px) {
+  .heroCard {
+    padding: var(--space-6);
+  }
+
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .courseRow {
+    flex-direction: column;
+  }
+
+  .courseRowMeta {
+    align-items: flex-start;
+  }
+
+  .featuredCard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

@@ -12,12 +12,6 @@ import {
 } from "@/services/courses";
 import { getCourseVideos, Video } from "@/services/videos";
 import { Button } from "@/components/ui/Button/Button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/Card/Card";
 import { toast } from "sonner";
 import styles from "./page.module.css";
 
@@ -125,140 +119,162 @@ export default function CourseDetailPage() {
   const isStudent = user?.role === "student";
   const isEnrolled = enrollmentStatus?.isEnrolled || false;
 
+  const estimatedHours = Math.max(1, videos.length * 2);
+
   return (
-    <div className={styles.container}>
-      <div className={styles.innerContainer}>
-        {/* Course Header */}
-        <div className={styles.header}>
-          <div className={styles.headerContent}>
-            <h1 className={styles.title}>{course.title}</h1>
-            <p className={styles.description}>{course.description}</p>
-            <div className={styles.courseInfo}>
-              <span className={styles.price}>R$ {course.price}</span>
-              <span className={styles.videoCount}>
-                {videos.length} {videos.length === 1 ? "vídeo" : "vídeos"}
-              </span>
-              {course.creator && (
-                <span className={styles.creator}>
-                  por {course.creator.username}
-                </span>
+    <div className={styles.page}>
+      <div className={styles.inner}>
+        <section className={styles.heroCard}>
+          <div className={styles.heroText}>
+            <span className={styles.heroBadge}>Curso com mentoria</span>
+            <h1>{course.title}</h1>
+            <p>{course.description}</p>
+
+            <div className={styles.heroMeta}>
+              <div>
+                <span className={styles.metaLabel}>Investimento</span>
+                <strong>R$ {course.price}</strong>
+              </div>
+              <div>
+                <span className={styles.metaLabel}>Aulas disponíveis</span>
+                <strong>
+                  {videos.length} {videos.length === 1 ? "aula" : "aulas"}
+                </strong>
+              </div>
+              <div>
+                <span className={styles.metaLabel}>Mentor</span>
+                <strong>{course.creator?.username || "Mentoria AI"}</strong>
+              </div>
+            </div>
+
+            <div className={styles.heroActions}>
+              {isCreator && (
+                <Button onClick={handleAddVideo} variant="primary" size="large">
+                  Adicionar vídeo
+                </Button>
               )}
+              {isStudent && !isEnrolled && (
+                <Button
+                  onClick={handleEnroll}
+                  variant="primary"
+                  size="large"
+                  loading={enrolling}
+                >
+                  {enrolling ? "Inscrevendo..." : "Se inscrever"}
+                </Button>
+              )}
+              {(isStudent && isEnrolled) || isCreator ? (
+                <Button
+                  variant="outline"
+                  size="large"
+                  onClick={() => router.push("/courses")}
+                >
+                  Ver outros cursos
+                </Button>
+              ) : null}
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className={styles.actions}>
-            {isCreator && (
-              <Button onClick={handleAddVideo} variant="primary">
-                Adicionar Vídeo
-              </Button>
-            )}
-
-            {isStudent && !isEnrolled && (
-              <Button
-                onClick={handleEnroll}
-                variant="primary"
-                loading={enrolling}
-              >
-                {enrolling ? "Inscrevendo..." : "Se Inscrever"}
-              </Button>
-            )}
+          <div className={styles.heroStats}>
+            <div>
+              <span>{estimatedHours}h</span>
+              <p>Duração sugerida</p>
+            </div>
+            <div>
+              <span>{Math.max(1, videos.length)} módulos</span>
+              <p>Conteúdo estruturado</p>
+            </div>
+            <div>
+              <span>100%</span>
+              <p>Mentoria com IA</p>
+            </div>
           </div>
-        </div>
+        </section>
 
-        {/* Videos Section */}
-        {(isCreator || (isStudent && isEnrolled)) && (
-          <div className={styles.videosSection}>
-            <h2 className={styles.sectionTitle}>
-              {isCreator ? "Gerenciar Vídeos" : "Aulas do Curso"}
-            </h2>
-
-            {videos.length === 0 ? (
-              <Card variant="default">
-                <CardContent>
-                  <p className={styles.emptyMessage}>
-                    {isCreator
-                      ? "Nenhum vídeo adicionado ainda. Clique em 'Adicionar Vídeo' para começar."
-                      : "Este curso ainda não possui vídeos."}
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className={styles.videoGrid}>
-                {videos.map((video) => (
-                  <Card
-                    key={video.id}
-                    variant="elevated"
-                    className={styles.videoCard}
-                  >
-                    <CardHeader>
-                      <CardTitle className={styles.videoTitle}>
-                        {video.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className={styles.videoInfo}>
-                        {video.duration && (
-                          <span className={styles.duration}>
-                            {Math.floor(video.duration / 60)}:
-                            {(video.duration % 60).toString().padStart(2, "0")}
-                          </span>
-                        )}
-                        <span className={styles.createdAt}>
-                          {new Date(video.createdAt).toLocaleDateString(
-                            "pt-BR"
-                          )}
-                        </span>
-                      </div>
-
-                      <div className={styles.videoActions}>
-                        {isCreator ? (
-                          <>
-                            <Button
-                              onClick={() => handleWatchVideo(video.id)}
-                              variant="outline"
-                              size="small"
-                            >
-                              Visualizar
-                            </Button>
-                            <Button
-                              onClick={() => handleEditVideo(video.id)}
-                              variant="primary"
-                              size="small"
-                            >
-                              Editar
-                            </Button>
-                          </>
-                        ) : (
-                          <Button
-                            onClick={() => handleWatchVideo(video.id)}
-                            variant="primary"
-                            size="small"
-                            fullWidth
-                          >
-                            Assistir Aula
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+        {isStudent && !isEnrolled && (
+          <div className={styles.enrollmentBanner}>
+            <h3>Desbloqueie o conteúdo completo</h3>
+            <p>
+              Inscreva-se para assistir às aulas, acompanhar projetos guiados e
+              receber feedback da mentoria inteligente.
+            </p>
           </div>
         )}
 
-        {/* Not Enrolled Message for Students */}
-        {isStudent && !isEnrolled && (
-          <Card variant="default" className={styles.enrollmentCard}>
-            <CardContent>
-              <h3>Inscreva-se para acessar o conteúdo</h3>
-              <p>
-                Para ter acesso a todas as aulas deste curso, você precisa se
-                inscrever. Clique no botão "Se Inscrever" acima para começar.
-              </p>
-            </CardContent>
-          </Card>
+        {(isCreator || (isStudent && isEnrolled)) && (
+          <section className={styles.syllabus}>
+            <header>
+              <div>
+                <p className={styles.syllabusKicker}>
+                  {isCreator ? "Gerenciamento" : "Trilha de aulas"}
+                </p>
+                <h2>Aulas do curso</h2>
+              </div>
+              <span>{videos.length} conteúdo(s)</span>
+            </header>
+
+            {videos.length === 0 ? (
+              <div className={styles.emptyList}>
+                {isCreator
+                  ? "Nenhum vídeo adicionado ainda. Clique em “Adicionar vídeo” para começar."
+                  : "Este curso ainda não possui aulas disponíveis."}
+              </div>
+            ) : (
+              <ol className={styles.lessonList}>
+                {videos.map((video, index) => (
+                  <li key={video.id} className={styles.lessonItem}>
+                    <div>
+                      <span className={styles.lessonIndex}>
+                        {index + 1 < 10 ? `0${index + 1}` : index + 1}
+                      </span>
+                      <div>
+                        <h3>{video.title}</h3>
+                        <p>
+                          Publicado em{" "}
+                          {new Date(video.createdAt).toLocaleDateString("pt-BR")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className={styles.lessonActions}>
+                      {video.duration && (
+                        <span className={styles.lessonDuration}>
+                          {Math.floor(video.duration / 60)}:
+                          {(video.duration % 60).toString().padStart(2, "0")}{" "}
+                          min
+                        </span>
+                      )}
+                      {isCreator ? (
+                        <div className={styles.lessonButtons}>
+                          <Button
+                            variant="outline"
+                            size="small"
+                            onClick={() => handleWatchVideo(video.id)}
+                          >
+                            Visualizar
+                          </Button>
+                          <Button
+                            variant="primary"
+                            size="small"
+                            onClick={() => handleEditVideo(video.id)}
+                          >
+                            Editar
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="primary"
+                          size="small"
+                          onClick={() => handleWatchVideo(video.id)}
+                        >
+                          Assistir aula
+                        </Button>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
         )}
       </div>
     </div>
