@@ -13,6 +13,9 @@ export interface Course {
     username: string;
   };
   videos?: Video[];
+  totalDuration?: number; // Total duration in seconds (sum of all video durations)
+  videoCount?: number; // Number of videos in the course
+  tags?: string[]; // Array of tags/categories
   enrolledAt?: string; // For enrolled courses
 }
 

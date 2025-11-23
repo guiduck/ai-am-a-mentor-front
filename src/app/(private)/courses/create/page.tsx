@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { createCourse } from "@/actions/courses";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,25 +18,59 @@ import {
 import styles from "./page.module.css";
 import { toast } from "sonner";
 
+const AVAILABLE_TAGS = [
+  "Programação",
+  "Design",
+  "IA",
+  "Marketing",
+  "Produtividade",
+  "Negócios",
+  "Fotografia",
+  "Vídeo",
+  "Música",
+  "Escrita",
+  "Idiomas",
+  "Saúde",
+  "Fitness",
+  "Culinária",
+  "Arte",
+];
+
 const schema = z.object({
   title: z.string().min(1, "Título é obrigatório"),
   description: z.string().min(1, "Descrição é obrigatória"),
   price: z.number().min(0, "Preço deve ser maior ou igual a zero"),
+  tags: z.array(z.string()).optional().default([]),
 });
 
 type FormData = z.infer<typeof schema>;
 
 export default function CreateCoursePage() {
   const router = useRouter();
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<FormData>({ resolver: zodResolver(schema) });
+    setValue,
+  } = useForm<FormData>({ 
+    resolver: zodResolver(schema),
+    defaultValues: {
+      tags: [],
+    },
+  });
+
+  const toggleTag = (tag: string) => {
+    const newTags = selectedTags.includes(tag)
+      ? selectedTags.filter((t) => t !== tag)
+      : [...selectedTags, tag];
+    setSelectedTags(newTags);
+    setValue("tags", newTags);
+  };
 
   const onSubmit = async (data: FormData) => {
-    const result = await createCourse(data);
+    const result = await createCourse({ ...data, tags: selectedTags });
 
     if (result?.error) {
       toast.error(result.errorUserMessage);
@@ -106,6 +141,32 @@ export default function CreateCoursePage() {
                   <p className={styles.error}>
                     <span>⚠</span>
                     {errors.price.message}
+                  </p>
+                )}
+              </div>
+
+              <div className={styles.formGroup}>
+                <Label htmlFor="tags">Tags/Categorias</Label>
+                <p className={styles.helperText}>
+                  Selecione as tags que melhor descrevem seu curso
+                </p>
+                <div className={styles.tagsContainer}>
+                  {AVAILABLE_TAGS.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      className={`${styles.tagChip} ${
+                        selectedTags.includes(tag) ? styles.tagChipActive : ""
+                      }`}
+                      onClick={() => toggleTag(tag)}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+                {selectedTags.length === 0 && (
+                  <p className={styles.helperText}>
+                    Nenhuma tag selecionada (opcional)
                   </p>
                 )}
               </div>

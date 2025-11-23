@@ -19,6 +19,7 @@ export async function registerAndLogin(data: {
   email: string;
   password: string;
   username: string;
+  role: "creator" | "student";
 }): Promise<APIResponse<{ access_token: string }>> {
   // First register the user
   const registerRes = await registerUser(data);
@@ -33,13 +34,18 @@ export async function registerAndLogin(data: {
     };
   }
 
-  // Then login automatically
+  // Then login automatically using the correct endpoint based on role
   const loginRes = await loginUser({
     email: data.email,
     password: data.password,
+    role: data.role,
   });
 
-  if (loginRes.error || !loginRes.data?.token) {
+  // Backend returns both access_token and token for compatibility
+  const token =
+    loginRes.data?.access_token || loginRes.data?.token || null;
+
+  if (loginRes.error || !token) {
     return {
       status: loginRes.status,
       error: true,
@@ -48,8 +54,6 @@ export async function registerAndLogin(data: {
       headers: loginRes.headers,
     };
   }
-
-  const token = loginRes.data.token;
   const cookieStore = await cookies();
 
   // Set the access token cookie first

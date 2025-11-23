@@ -1,10 +1,30 @@
 import API from "@/lib/api";
 
-export async function loginUser(data: { email: string; password: string }) {
-  // Try creator login first
+export async function loginUser(data: {
+  email: string;
+  password: string;
+  role?: "creator" | "student";
+}) {
+  // If role is provided, use the correct endpoint directly
+  if (data.role) {
+    const endpoint =
+      data.role === "creator" ? "creators/login" : "students/login";
+    return await API<{ token: string; access_token?: string }>(endpoint, {
+      method: "POST",
+      data: {
+        email: data.email,
+        password: data.password,
+      },
+    });
+  }
+
+  // Fallback: Try creator login first, then student (for backward compatibility)
   const creatorLoginRes = await API<{ token: string }>("creators/login", {
     method: "POST",
-    data,
+    data: {
+      email: data.email,
+      password: data.password,
+    },
   });
 
   // If creator login succeeds, return it
@@ -16,7 +36,10 @@ export async function loginUser(data: { email: string; password: string }) {
   if (creatorLoginRes.status === 401) {
     const studentLoginRes = await API<{ token: string }>("students/login", {
       method: "POST",
-      data,
+      data: {
+        email: data.email,
+        password: data.password,
+      },
     });
     return studentLoginRes;
   }

@@ -119,7 +119,12 @@ export default function CourseDetailPage() {
   const isStudent = user?.role === "student";
   const isEnrolled = enrollmentStatus?.isEnrolled || false;
 
-  const estimatedHours = Math.max(1, videos.length * 2);
+  // Calculate total duration from videos (in seconds)
+  const totalDuration = videos.reduce(
+    (sum, video) => sum + (video.duration || 0),
+    0
+  );
+  const estimatedHours = Math.max(1, Math.round(totalDuration / 3600));
 
   return (
     <div className={styles.page}>

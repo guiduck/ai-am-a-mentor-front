@@ -4,9 +4,16 @@ export async function registerUser(data: {
   email: string;
   password: string;
   username: string;
+  role: "creator" | "student";
 }) {
-  return await API<{ message: string; user: any }>("creators/register", {
+  const endpoint =
+    data.role === "creator" ? "creators/register" : "students/register";
+  return await API<{ message: string; user: any }>(endpoint, {
     method: "POST",
-    data,
+    data: {
+      email: data.email,
+      password: data.password,
+      username: data.username,
+    },
   });
 }

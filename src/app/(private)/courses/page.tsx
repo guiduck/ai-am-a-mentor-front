@@ -19,9 +19,13 @@ interface Course {
     id: string;
     username: string;
   };
+  totalDuration?: number; // Total duration in seconds
+  videoCount?: number; // Number of videos
+  tags?: string[]; // Array of tags/categories
 }
 
-const CATEGORY_FILTERS = [
+// Default category filters - will be dynamically populated from course tags
+const DEFAULT_CATEGORY_FILTERS = [
   "Todos",
   "Programação",
   "Design",
@@ -41,8 +45,54 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("Todos");
 
+  // Todos os hooks devem ser chamados antes de qualquer return condicional
+  const uniqueCreators = useMemo(() => {
+    const ids = new Set(
+      courses.map((course) => course.creator?.id || course.creatorId)
+    );
+    return ids.size;
+  }, [courses]);
+
+  const averagePrice = useMemo(() => {
+    if (!courses.length) return 0;
+    const sum = courses.reduce(
+      (total, course) => total + parseFloat(course.price),
+      0
+    );
+    return sum / courses.length;
+  }, [courses]);
+
+  // Extract unique tags from all courses
+  const availableTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    courses.forEach((course) => {
+      if (course.tags && course.tags.length > 0) {
+        course.tags.forEach((tag) => tagSet.add(tag));
+      }
+    });
+    const uniqueTags = Array.from(tagSet).sort();
+    return ["Todos", ...uniqueTags];
+  }, [courses]);
+
+  const filteredCourses = useMemo(() => {
+    if (selectedCategory === "Todos") return courses;
+
+    // Filter by tag if course has tags, otherwise fallback to title/description search
+    return courses.filter((course) => {
+      if (course.tags && course.tags.length > 0) {
+        return course.tags.some(
+          (tag) => tag.toLowerCase() === selectedCategory.toLowerCase()
+        );
+      }
+      // Fallback: search in title and description
+      const needle = selectedCategory.toLowerCase();
+      return `${course.title} ${course.description}`.toLowerCase().includes(needle);
+    });
+  }, [courses, selectedCategory]);
+
   useEffect(() => {
     loadCourses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadCourses = async () => {
@@ -70,31 +120,6 @@ export default function CoursesPage() {
       </div>
     );
   }
-
-  const uniqueCreators = useMemo(() => {
-    const ids = new Set(
-      courses.map((course) => course.creator?.id || course.creatorId)
-    );
-    return ids.size;
-  }, [courses]);
-
-  const averagePrice = useMemo(() => {
-    if (!courses.length) return 0;
-    const sum = courses.reduce(
-      (total, course) => total + parseFloat(course.price),
-      0
-    );
-    return sum / courses.length;
-  }, [courses]);
-
-  const filteredCourses = useMemo(() => {
-    if (selectedCategory === "Todos") return courses;
-
-    const needle = selectedCategory.toLowerCase();
-    return courses.filter((course) =>
-      `${course.title} ${course.description}`.toLowerCase().includes(needle)
-    );
-  }, [courses, selectedCategory]);
 
   return (
     <div className={styles.page}>
@@ -143,7 +168,7 @@ export default function CoursesPage() {
           </div>
         </div>
         <div className={styles.filterChips}>
-          {CATEGORY_FILTERS.map((category) => (
+          {availableTags.map((category) => (
             <button
               key={category}
               className={`${styles.filterChip} ${
@@ -158,11 +183,7 @@ export default function CoursesPage() {
         </div>
       </div>
 
-      {loading ? (
-        <div className={styles.emptyState}>
-          <p>Carregando cursos...</p>
-        </div>
-      ) : filteredCourses.length === 0 ? (
+      {filteredCourses.length === 0 ? (
         <div className={styles.emptyState}>
           <div className={styles.emptyCard}>
             <h3>Nenhum curso encontrado</h3>
@@ -192,7 +213,7 @@ export default function CoursesPage() {
               <div className={styles.courseDetails}>
                 <div>
                   <span className={styles.detailLabel}>Módulos</span>
-                  <strong>{Math.max(1, (index % 4) + 3)}</strong>
+                  <strong>{course.videoCount || 0}</strong>
                 </div>
                 <div>
                   <span className={styles.detailLabel}>Atualizado</span>
@@ -202,7 +223,11 @@ export default function CoursesPage() {
                 </div>
                 <div>
                   <span className={styles.detailLabel}>Duração estimada</span>
-                  <strong>{Math.max(2, (index % 5) + 5)}h</strong>
+                  <strong>
+                    {course.totalDuration
+                      ? `${Math.round(course.totalDuration / 3600)}h`
+                      : "0h"}
+                  </strong>
                 </div>
               </div>
 

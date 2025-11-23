@@ -22,6 +22,7 @@ interface CreateCourseData {
   title: string;
   description: string;
   price: number;
+  tags?: string[];
 }
 
 // Create a new course (creators only)
