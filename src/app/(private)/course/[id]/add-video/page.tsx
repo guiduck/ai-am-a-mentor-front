@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useAuthStore } from "@/stores/authStore";
+import { getCourseById } from "@/services/courses";
 import { createVideo } from "@/services/videos";
 import API from "@/lib/api";
 import { Button } from "@/components/ui/Button/Button";
@@ -36,9 +38,61 @@ type AddVideoFormData = z.infer<typeof addVideoSchema>;
 export default function AddVideoPage() {
   const { id: courseId } = useParams() as { id: string };
   const router = useRouter();
+  const { user } = useAuthStore();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [checkingAccess, setCheckingAccess] = useState(true);
+
+  // Verify user is creator and owns the course
+  useEffect(() => {
+    const verifyAccess = async () => {
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      if (user.role !== "creator") {
+        toast.error("Apenas criadores podem adicionar vídeos");
+        router.push(`/course/${courseId}`);
+        return;
+      }
+
+      // Verify course ownership
+      try {
+        const course = await getCourseById(courseId);
+        if (!course) {
+          toast.error("Curso não encontrado");
+          router.push("/courses");
+          return;
+        }
+
+        if (course.creatorId !== user.id) {
+          toast.error("Você só pode adicionar vídeos aos seus próprios cursos");
+          router.push(`/course/${courseId}`);
+          return;
+        }
+
+        setCheckingAccess(false);
+      } catch (error) {
+        console.error("Error verifying access:", error);
+        toast.error("Erro ao verificar permissões");
+        router.push(`/course/${courseId}`);
+      }
+    };
+
+    verifyAccess();
+  }, [user, courseId, router]);
+
+  if (checkingAccess) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.innerContainer}>
+          <h1>Verificando permissões...</h1>
+        </div>
+      </div>
+    );
+  }
 
   const {
     register,

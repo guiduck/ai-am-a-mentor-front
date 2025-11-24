@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/stores/authStore";
 import { getCourses } from "@/services/courses";
 import { Button } from "@/components/ui/Button/Button";
 import styles from "./page.module.css";
@@ -41,9 +42,13 @@ const currencyFormatter = new Intl.NumberFormat("pt-BR", {
 
 export default function CoursesPage() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("Todos");
+
+  const isCreator = user?.role === "creator";
+  const isStudent = user?.role === "student";
 
   // Todos os hooks devem ser chamados antes de qualquer return condicional
   const uniqueCreators = useMemo(() => {
@@ -132,12 +137,21 @@ export default function CoursesPage() {
             trilhas, salve cursos para depois e evolua no seu ritmo.
           </p>
           <div className={styles.heroActions}>
-            <Button variant="primary" size="large" onClick={() => router.push("/courses/create")}>
-              Criar novo curso
-            </Button>
-            <Button variant="outline" size="large" onClick={() => router.push("/dashboard/student")}>
-              Continuar aprendendo
-            </Button>
+            {isCreator && (
+              <Button variant="primary" size="large" onClick={() => router.push("/courses/create")}>
+                Criar novo curso
+              </Button>
+            )}
+            {isStudent && (
+              <Button variant="outline" size="large" onClick={() => router.push("/dashboard/student")}>
+                Continuar aprendendo
+              </Button>
+            )}
+            {!isCreator && !isStudent && (
+              <Button variant="outline" size="large" onClick={() => router.push("/dashboard")}>
+                Ver dashboard
+              </Button>
+            )}
           </div>
         </div>
         <div className={styles.heroStats}>

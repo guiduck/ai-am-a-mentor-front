@@ -68,6 +68,50 @@ export function middleware(req: NextRequest) {
       console.warn("[middleware] /courses/create blocked for role", userRole);
       return NextResponse.redirect(url);
     }
+
+    // Handle courses management - only creators
+    if (pathname.startsWith("/courses/manage") && userRole !== "creator") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/dashboard/student";
+      console.warn("[middleware] /courses/manage blocked for role", userRole);
+      return NextResponse.redirect(url);
+    }
+
+    // Handle enrolled courses - only students
+    if (pathname.startsWith("/courses/enrolled") && userRole !== "student") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/dashboard/creator";
+      console.warn("[middleware] /courses/enrolled blocked for role", userRole);
+      return NextResponse.redirect(url);
+    }
+
+    // Handle add video - only creators (ownership checked in component)
+    if (pathname.includes("/add-video") && userRole !== "creator") {
+      const url = req.nextUrl.clone();
+      // Extract courseId from pathname and redirect to course page
+      const courseIdMatch = pathname.match(/\/course\/([^/]+)/);
+      if (courseIdMatch) {
+        url.pathname = `/course/${courseIdMatch[1]}`;
+      } else {
+        url.pathname = "/courses";
+      }
+      console.warn("[middleware] /add-video blocked for role", userRole);
+      return NextResponse.redirect(url);
+    }
+
+    // Handle edit video - only creators (ownership checked in component)
+    if (pathname.includes("/edit-video") && userRole !== "creator") {
+      const url = req.nextUrl.clone();
+      // Extract courseId from pathname and redirect to course page
+      const courseIdMatch = pathname.match(/\/course\/([^/]+)/);
+      if (courseIdMatch) {
+        url.pathname = `/course/${courseIdMatch[1]}`;
+      } else {
+        url.pathname = "/courses";
+      }
+      console.warn("[middleware] /edit-video blocked for role", userRole);
+      return NextResponse.redirect(url);
+    }
   }
 
   console.log("[middleware] allow request", pathname);
