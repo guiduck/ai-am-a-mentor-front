@@ -86,10 +86,12 @@ export default async function API<T = any>(
   const token = getAuthToken();
 
   const isFormData = data instanceof FormData;
+  const hasBody = method !== "GET" && data;
 
   // Build headers object
+  // Only add Content-Type if there's a body and it's not FormData
   const requestHeaders: Record<string, string> = {
-    ...(isFormData ? {} : { "Content-Type": "application/json" }),
+    ...(hasBody && !isFormData ? { "Content-Type": "application/json" } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...headers, // Allow headers to override auth headers if needed
   };
