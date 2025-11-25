@@ -44,6 +44,17 @@ export default function AddVideoPage() {
   const [uploading, setUploading] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(true);
 
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setValue,
+    watch,
+  } = useForm<AddVideoFormData>({
+    resolver: zodResolver(addVideoSchema),
+  });
+
   // Verify user is creator and owns the course
   useEffect(() => {
     const verifyAccess = async () => {
@@ -93,16 +104,6 @@ export default function AddVideoPage() {
       </div>
     );
   }
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    setValue,
-    watch,
-  } = useForm<AddVideoFormData>({
-    resolver: zodResolver(addVideoSchema),
-  });
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
