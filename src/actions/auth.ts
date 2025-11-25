@@ -42,8 +42,11 @@ export async function registerAndLogin(data: {
   });
 
   // Backend returns both access_token and token for compatibility
-  const token =
-    loginRes.data?.access_token || loginRes.data?.token || null;
+  const loginData = loginRes.data as {
+    token: string;
+    access_token?: string;
+  } | null;
+  const token = loginData?.access_token || loginData?.token || null;
 
   if (loginRes.error || !token) {
     return {

@@ -54,7 +54,7 @@ export default function CreateCoursePage() {
     handleSubmit,
     formState: { errors, isSubmitting },
     setValue,
-  } = useForm<FormData>({ 
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       tags: [],
