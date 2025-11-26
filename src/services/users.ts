@@ -42,3 +42,40 @@ export async function getCurrentUser(): Promise<User | null> {
     return null;
   }
 }
+
+export interface UpdateUserProfileData {
+  username?: string;
+  email?: string;
+  password?: string;
+}
+
+export async function updateUserProfile(
+  data: UpdateUserProfileData
+): Promise<{ user: User | null; error: boolean; errorMessage?: string }> {
+  try {
+    const response = await API<{ message: string; user: User }>("users/me", {
+      method: "PUT",
+      data,
+    });
+
+    if (response.error || !response.data) {
+      return {
+        user: null,
+        error: true,
+        errorMessage: response.errorUserMessage || "Erro ao atualizar perfil",
+      };
+    }
+
+    return {
+      user: response.data.user,
+      error: false,
+    };
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    return {
+      user: null,
+      error: true,
+      errorMessage: "Erro ao atualizar perfil",
+    };
+  }
+}

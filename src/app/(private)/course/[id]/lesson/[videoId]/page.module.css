@@ -169,11 +169,25 @@
   flex-direction: column;
 }
 
-.chatPlaceholder {
+.chatContainer {
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 400px;
+}
+
+.transcriptPrompt {
+  padding: var(--space-4);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+  text-align: center;
+}
+
+.transcriptPrompt p {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-3);
 }
 
 .chatMessages {
@@ -181,12 +195,38 @@
   padding: var(--space-4) 0;
   border-bottom: 1px solid var(--border-secondary);
   margin-bottom: var(--space-4);
+  overflow-y: auto;
+  max-height: 500px;
 }
 
 .mentorMessage {
   display: flex;
   gap: var(--space-3);
   margin-bottom: var(--space-4);
+}
+
+.userMessage {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  flex-direction: row-reverse;
+}
+
+.userMessage .messageAvatar {
+  background: var(--color-secondary);
+}
+
+.userMessage .messageContent {
+  text-align: right;
+}
+
+.userMessage .messageContent p {
+  background: var(--color-primary);
+  color: white;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  display: inline-block;
+  max-width: 80%;
 }
 
 .messageAvatar {
@@ -214,6 +254,21 @@
 
 .messageContent p:last-child {
   margin-bottom: 0;
+}
+
+.typingIndicator {
+  font-style: italic;
+  color: var(--text-secondary);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .chatInput {

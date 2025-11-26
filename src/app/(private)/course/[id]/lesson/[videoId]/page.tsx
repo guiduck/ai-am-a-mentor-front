@@ -1,10 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { getVideoById, Video, getVideoStreamUrl } from "@/services/videos";
 import { getCourseById, Course } from "@/services/courses";
+import {
+  askAIMentor,
+  getVideoTranscript,
+  transcribeVideo,
+} from "@/services/ai-chat";
 import { Button } from "@/components/ui/Button/Button";
 import VideoPlayer from "@/components/ui/VideoPlayer/VideoPlayer";
 import {
@@ -15,6 +20,13 @@ import {
 } from "@/components/ui/Card/Card";
 import { toast } from "sonner";
 import styles from "./page.module.css";
+
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
+}
 
 export default function LessonPage() {
   const { id: courseId, videoId } = useParams() as {
@@ -29,6 +41,22 @@ export default function LessonPage() {
   const [loading, setLoading] = useState(true);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
   const [loadingStream, setLoadingStream] = useState(false);
+  
+  // AI Chat state
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: "welcome",
+      role: "assistant",
+      content:
+        "Olá! Sou seu mentor de IA. Estou aqui para ajudar você com qualquer dúvida sobre esta aula. Posso explicar conceitos, esclarecer pontos específicos do vídeo ou ajudar com exercícios relacionados ao conteúdo.",
+      timestamp: new Date(),
+    },
+  ]);
+  const [question, setQuestion] = useState("");
+  const [isAsking, setIsAsking] = useState(false);
+  const [hasTranscript, setHasTranscript] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (courseId && videoId && user) {
@@ -72,6 +100,9 @@ export default function LessonPage() {
         toast.error("Não foi possível carregar o vídeo. Verifique se o vídeo foi enviado.");
       }
       setLoadingStream(false);
+
+      // Check if transcript exists
+      await checkTranscript();
     } catch (error) {
       console.error("Error loading lesson data:", error);
       toast.error("Erro ao carregar aula");
@@ -84,6 +115,86 @@ export default function LessonPage() {
   const handleBackToCourse = () => {
     router.push(`/course/${courseId}`);
   };
+
+  const checkTranscript = async () => {
+    try {
+      const transcript = await getVideoTranscript(videoId);
+      if (transcript) {
+        setHasTranscript(true);
+      }
+    } catch (error) {
+      console.error("Error checking transcript:", error);
+    }
+  };
+
+  const handleTranscribe = async () => {
+    if (isTranscribing) return;
+
+    setIsTranscribing(true);
+    try {
+      const result = await transcribeVideo(videoId);
+      if (result) {
+        setHasTranscript(true);
+        toast.success("Vídeo transcrito com sucesso! Agora você pode fazer perguntas.");
+      } else {
+        toast.error("Erro ao transcrever vídeo. Tente novamente.");
+      }
+    } catch (error) {
+      console.error("Error transcribing:", error);
+      toast.error("Erro ao transcrever vídeo");
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
+  const handleAskQuestion = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+
+    if (!question.trim() || isAsking) return;
+
+    if (!hasTranscript) {
+      toast.error("Este vídeo ainda não foi transcrito. Por favor, transcreva primeiro.");
+      return;
+    }
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: "user",
+      content: question.trim(),
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setQuestion("");
+    setIsAsking(true);
+
+    try {
+      const response = await askAIMentor(videoId, question.trim());
+      if (response) {
+        const assistantMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: response.response,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+      } else {
+        toast.error("Erro ao obter resposta do mentor de IA");
+        setMessages((prev) => prev.slice(0, -1)); // Remove user message on error
+      }
+    } catch (error) {
+      console.error("Error asking AI:", error);
+      toast.error("Erro ao obter resposta do mentor de IA");
+      setMessages((prev) => prev.slice(0, -1)); // Remove user message on error
+    } finally {
+      setIsAsking(false);
+    }
+  };
+
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   if (loading) {
     return (
@@ -172,40 +283,79 @@ export default function LessonPage() {
                 </p>
               </CardHeader>
               <CardContent className={styles.chatContent}>
-                {/* Placeholder for AI chat */}
-                <div className={styles.chatPlaceholder}>
-                  <div className={styles.chatMessages}>
-                    <div className={styles.mentorMessage}>
-                      <div className={styles.messageAvatar}>🤖</div>
-                      <div className={styles.messageContent}>
-                        <p>
-                          Olá! Sou seu mentor de IA. Estou aqui para ajudar você
-                          com qualquer dúvida sobre esta aula.
-                        </p>
-                        <p>
-                          Posso explicar conceitos, esclarecer pontos
-                          específicos do vídeo ou ajudar com exercícios
-                          relacionados ao conteúdo.
-                        </p>
-                      </div>
+                <div className={styles.chatContainer}>
+                  {/* Transcript status */}
+                  {!hasTranscript && (
+                    <div className={styles.transcriptPrompt}>
+                      <p>
+                        Para usar o mentor de IA, primeiro é necessário transcrever
+                        o vídeo.
+                      </p>
+                      <Button
+                        variant="primary"
+                        size="small"
+                        onClick={handleTranscribe}
+                        disabled={isTranscribing}
+                      >
+                        {isTranscribing ? "Transcrevendo..." : "Transcrever vídeo"}
+                      </Button>
                     </div>
+                  )}
+
+                  {/* Chat messages */}
+                  <div className={styles.chatMessages}>
+                    {messages.map((message) => (
+                      <div
+                        key={message.id}
+                        className={
+                          message.role === "user"
+                            ? styles.userMessage
+                            : styles.mentorMessage
+                        }
+                      >
+                        <div className={styles.messageAvatar}>
+                          {message.role === "user" ? "👤" : "🤖"}
+                        </div>
+                        <div className={styles.messageContent}>
+                          <p>{message.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {isAsking && (
+                      <div className={styles.mentorMessage}>
+                        <div className={styles.messageAvatar}>🤖</div>
+                        <div className={styles.messageContent}>
+                          <p className={styles.typingIndicator}>
+                            Pensando...
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
                   </div>
 
-                  <div className={styles.chatInput}>
+                  {/* Chat input */}
+                  <form
+                    onSubmit={handleAskQuestion}
+                    className={styles.chatInput}
+                  >
                     <input
                       type="text"
                       placeholder="Digite sua pergunta sobre a aula..."
                       className={styles.messageInput}
-                      disabled
+                      value={question}
+                      onChange={(e) => setQuestion(e.target.value)}
+                      disabled={!hasTranscript || isAsking}
                     />
-                    <Button variant="primary" size="small" disabled>
-                      Enviar
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="small"
+                      disabled={!hasTranscript || isAsking || !question.trim()}
+                    >
+                      {isAsking ? "Enviando..." : "Enviar"}
                     </Button>
-                  </div>
-
-                  <p className={styles.chatNote}>
-                    * Chat de IA será implementado em breve
-                  </p>
+                  </form>
                 </div>
               </CardContent>
             </Card>
