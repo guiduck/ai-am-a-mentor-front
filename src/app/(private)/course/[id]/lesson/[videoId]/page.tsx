@@ -3,7 +3,14 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
-import { getVideoById, Video, getVideoStreamUrl } from "@/services/videos";
+import {
+  getVideoById,
+  Video,
+  getVideoStreamUrl,
+  getVideoComments,
+  createComment,
+  Comment,
+} from "@/services/videos";
 import { getCourseById, Course } from "@/services/courses";
 import {
   askAIMentor,
@@ -19,6 +26,7 @@ import {
   CardTitle,
 } from "@/components/ui/Card/Card";
 import { toast } from "sonner";
+import { FullPageLoading, Loading } from "@/components/ui/Loading/Loading";
 import styles from "./page.module.css";
 
 interface ChatMessage {
@@ -41,7 +49,7 @@ export default function LessonPage() {
   const [loading, setLoading] = useState(true);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
   const [loadingStream, setLoadingStream] = useState(false);
-  
+
   // AI Chat state
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -56,7 +64,14 @@ export default function LessonPage() {
   const [isAsking, setIsAsking] = useState(false);
   const [hasTranscript, setHasTranscript] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Comments state
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [submittingComment, setSubmittingComment] = useState(false);
 
   useEffect(() => {
     if (courseId && videoId && user) {
@@ -97,12 +112,23 @@ export default function LessonPage() {
         setStreamUrl(streamData.streamUrl);
       } else {
         console.error("Failed to get stream URL for video:", videoId);
-        toast.error("Não foi possível carregar o vídeo. Verifique se o vídeo foi enviado.");
+        toast.error(
+          "Não foi possível carregar o vídeo. Verifique se o vídeo foi enviado."
+        );
       }
       setLoadingStream(false);
 
       // Check if transcript exists
-      await checkTranscript();
+      const transcriptExists = await checkTranscript();
+      
+      // Auto-transcribe if no transcript exists (only for creators)
+      if (!transcriptExists && user?.role === "creator") {
+        // Auto-start transcription in background (silent)
+        handleAutoTranscribe();
+      }
+
+      // Load comments
+      await loadComments();
     } catch (error) {
       console.error("Error loading lesson data:", error);
       toast.error("Erro ao carregar aula");
@@ -112,18 +138,68 @@ export default function LessonPage() {
     }
   };
 
+  const loadComments = async () => {
+    try {
+      setLoadingComments(true);
+      const commentsData = await getVideoComments(videoId);
+      setComments(commentsData);
+    } catch (error) {
+      console.error("Error loading comments:", error);
+      // Don't show error toast, comments are optional
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  const handleSubmitComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim() || submittingComment) return;
+
+    try {
+      setSubmittingComment(true);
+      const newCommentData = await createComment(videoId, newComment.trim());
+      setComments([newCommentData, ...comments]);
+      setNewComment("");
+      toast.success("Comentário adicionado!");
+    } catch (error: any) {
+      console.error("Error submitting comment:", error);
+      toast.error(error.message || "Erro ao adicionar comentário");
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
   const handleBackToCourse = () => {
     router.push(`/course/${courseId}`);
   };
 
-  const checkTranscript = async () => {
+  const checkTranscript = async (): Promise<boolean> => {
     try {
       const transcript = await getVideoTranscript(videoId);
       if (transcript) {
         setHasTranscript(true);
+        return true;
       }
+      setHasTranscript(false);
+      return false;
     } catch (error) {
       console.error("Error checking transcript:", error);
+      setHasTranscript(false);
+      return false;
+    }
+  };
+
+  const handleAutoTranscribe = async () => {
+    // Auto-transcribe silently in background (no toast, no blocking)
+    try {
+      await transcribeVideo(videoId);
+      // Poll for transcript after a delay
+      setTimeout(async () => {
+        await checkTranscript();
+      }, 10000); // Check after 10 seconds
+    } catch (error) {
+      console.error("Error auto-transcribing:", error);
+      // Silent fail - user can still manually transcribe
     }
   };
 
@@ -131,17 +207,39 @@ export default function LessonPage() {
     if (isTranscribing) return;
 
     setIsTranscribing(true);
+    const loadingToast = toast.loading(
+      "Iniciando transcrição... Isso pode levar alguns minutos."
+    );
+
     try {
       const result = await transcribeVideo(videoId);
       if (result) {
+        toast.dismiss(loadingToast);
         setHasTranscript(true);
-        toast.success("Vídeo transcrito com sucesso! Agora você pode fazer perguntas.");
+        setMessages([
+          {
+            id: "ai-intro",
+            role: "assistant",
+            content:
+              "Olá! Sou seu mentor de IA. O vídeo foi transcrito com sucesso! Agora você pode fazer perguntas.",
+            timestamp: new Date(),
+          },
+        ]);
+        toast.success(
+          "Vídeo transcrito com sucesso! Agora você pode fazer perguntas."
+        );
       } else {
+        toast.dismiss(loadingToast);
         toast.error("Erro ao transcrever vídeo. Tente novamente.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error transcribing:", error);
-      toast.error("Erro ao transcrever vídeo");
+      toast.dismiss(loadingToast);
+      toast.error(
+        error.message ||
+          "Erro ao transcrever vídeo. Verifique se o FFmpeg está instalado no servidor.",
+        { duration: 8000 }
+      );
     } finally {
       setIsTranscribing(false);
     }
@@ -153,7 +251,9 @@ export default function LessonPage() {
     if (!question.trim() || isAsking) return;
 
     if (!hasTranscript) {
-      toast.error("Este vídeo ainda não foi transcrito. Por favor, transcreva primeiro.");
+      toast.error(
+        "Este vídeo ainda não foi transcrito. Por favor, transcreva primeiro."
+      );
       return;
     }
 
@@ -197,11 +297,7 @@ export default function LessonPage() {
   }, [messages]);
 
   if (loading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.loading}>Carregando aula...</div>
-      </div>
-    );
+    return <FullPageLoading text="Carregando aula..." />;
   }
 
   if (!video || !course) {
@@ -247,7 +343,7 @@ export default function LessonPage() {
 
                 {loadingStream && (
                   <div className={styles.streamLoading}>
-                    <p>Carregando vídeo...</p>
+                    <Loading text="Carregando vídeo..." size="small" />
                   </div>
                 )}
 
@@ -267,20 +363,121 @@ export default function LessonPage() {
                     )}
                   </div>
                 </div>
+
+                {/* Comments Section - Moved inside video card */}
+                <div className={styles.commentsSection}>
+                  <CardHeader>
+                    <CardTitle>Comentários dos Alunos</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Comment Form */}
+                    <form
+                      onSubmit={handleSubmitComment}
+                      className={styles.commentForm}
+                    >
+                      <textarea
+                        className={styles.commentInput}
+                        placeholder="Deixe seu comentário sobre esta aula..."
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        disabled={submittingComment}
+                        rows={3}
+                      />
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        size="small"
+                        disabled={!newComment.trim() || submittingComment}
+                      >
+                        {submittingComment ? "Enviando..." : "Enviar Comentário"}
+                      </Button>
+                    </form>
+
+                    {/* Comments List */}
+                    {loadingComments ? (
+                      <Loading text="Carregando comentários..." />
+                    ) : comments.length === 0 ? (
+                      <p className={styles.noComments}>
+                        Nenhum comentário ainda. Seja o primeiro a comentar!
+                      </p>
+                    ) : (
+                      <div className={styles.commentsList}>
+                        {comments.map((comment) => (
+                          <div key={comment.id} className={styles.commentItem}>
+                            <div className={styles.commentHeader}>
+                              <strong className={styles.commentAuthor}>
+                                {comment.user?.username || "Usuário"}
+                              </strong>
+                              <span className={styles.commentDate}>
+                                {new Date(comment.createdAt).toLocaleDateString(
+                                  "pt-BR",
+                                  {
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }
+                                )}
+                              </span>
+                            </div>
+                            <p className={styles.commentContent}>{comment.content}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </div>
               </CardContent>
             </Card>
           </div>
+        </div>
 
-          {/* AI Mentor Chat Section */}
-          <div className={styles.chatSection}>
+        {/* Course Progress Section */}
+        <div className={styles.progressSection}>
+          <Card variant="default">
+            <CardHeader>
+              <CardTitle>Progresso do Curso</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className={styles.progressNote}>
+                Sistema de progresso será implementado em breve
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Floating AI Chat Button */}
+        <button
+          className={styles.chatToggleButton}
+          onClick={() => setIsChatOpen(!isChatOpen)}
+          aria-label="Abrir chat do mentor de IA"
+        >
+          {isChatOpen ? "✕" : "🤖"}
+        </button>
+
+        {/* AI Mentor Chat Section - Floating */}
+        {isChatOpen && (
+          <div className={styles.chatFloatingContainer}>
             <Card variant="elevated" className={styles.chatCard}>
               <CardHeader>
-                <CardTitle className={styles.chatTitle}>
-                  🤖 Mentor de IA
-                </CardTitle>
-                <p className={styles.chatSubtitle}>
-                  Tire suas dúvidas sobre esta aula
-                </p>
+                <div className={styles.chatHeaderContent}>
+                  <div>
+                    <CardTitle className={styles.chatTitle}>
+                      🤖 Mentor de IA
+                    </CardTitle>
+                    <p className={styles.chatSubtitle}>
+                      Tire suas dúvidas sobre esta aula
+                    </p>
+                  </div>
+                  <button
+                    className={styles.chatCloseButton}
+                    onClick={() => setIsChatOpen(false)}
+                    aria-label="Fechar chat"
+                  >
+                    ✕
+                  </button>
+                </div>
               </CardHeader>
               <CardContent className={styles.chatContent}>
                 <div className={styles.chatContainer}>
@@ -288,8 +485,8 @@ export default function LessonPage() {
                   {!hasTranscript && (
                     <div className={styles.transcriptPrompt}>
                       <p>
-                        Para usar o mentor de IA, primeiro é necessário transcrever
-                        o vídeo.
+                        Para usar o mentor de IA, primeiro é necessário
+                        transcrever o vídeo.
                       </p>
                       <Button
                         variant="primary"
@@ -297,7 +494,9 @@ export default function LessonPage() {
                         onClick={handleTranscribe}
                         disabled={isTranscribing}
                       >
-                        {isTranscribing ? "Transcrevendo..." : "Transcrever vídeo"}
+                        {isTranscribing
+                          ? "Transcrevendo..."
+                          : "Transcrever vídeo"}
                       </Button>
                     </div>
                   )}
@@ -325,9 +524,7 @@ export default function LessonPage() {
                       <div className={styles.mentorMessage}>
                         <div className={styles.messageAvatar}>🤖</div>
                         <div className={styles.messageContent}>
-                          <p className={styles.typingIndicator}>
-                            Pensando...
-                          </p>
+                          <p className={styles.typingIndicator}>Pensando...</p>
                         </div>
                       </div>
                     )}
@@ -360,21 +557,7 @@ export default function LessonPage() {
               </CardContent>
             </Card>
           </div>
-        </div>
-
-        {/* Course Progress Section */}
-        <div className={styles.progressSection}>
-          <Card variant="default">
-            <CardHeader>
-              <CardTitle>Progresso do Curso</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className={styles.progressNote}>
-                Sistema de progresso será implementado em breve
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        )}
       </div>
     </div>
   );

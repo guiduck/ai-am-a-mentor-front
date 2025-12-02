@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/Card/Card";
 import { toast } from "sonner";
+import { FullPageLoading } from "@/components/ui/Loading/Loading";
 import styles from "./page.module.css";
 
 const schema = z
@@ -137,15 +138,7 @@ export default function ProfilePage() {
   };
 
   if (loading) {
-    return (
-      <div className={styles.container}>
-        <Card variant="elevated">
-          <CardContent>
-            <p>Carregando...</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <FullPageLoading text="Carregando perfil..." />;
   }
 
   if (!userData) {

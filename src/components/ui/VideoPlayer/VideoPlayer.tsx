@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Loading } from "@/components/ui/Loading/Loading";
 import styles from "./VideoPlayer.module.css";
 
 interface VideoPlayerProps {
@@ -135,8 +136,7 @@ export default function VideoPlayer({
 
           {isLoading && (
             <div className={styles.loadingOverlay}>
-              <div className={styles.spinner}></div>
-              <p>Carregando vídeo...</p>
+              <Loading text="Carregando vídeo..." size="medium" />
             </div>
           )}
 

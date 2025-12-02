@@ -9,7 +9,7 @@ export interface TranscribeResponse {
 export interface TranscriptResponse {
   transcript: string;
   videoId: string;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface ChatResponse {
@@ -20,6 +20,7 @@ export interface ChatResponse {
 
 /**
  * Transcribe a video using OpenAI Whisper
+ * Returns immediately with status "processing", then polls for completion
  */
 export async function transcribeVideo(
   videoId: string
@@ -30,19 +31,75 @@ export async function transcribeVideo(
       data: { videoId },
     });
 
+    // If we get 202, transcription is processing in background
+    if (response.status === 202 && response.data?.status === "processing") {
+      console.log("Transcription started, polling for completion...");
+      
+      // Wait a bit before starting to poll (give it time to start processing)
+      await new Promise(resolve => setTimeout(resolve, 5000)); // 5 seconds initial delay
+      
+      // Poll for transcript (check every 5 seconds, max 5 minutes = 60 attempts)
+      const maxAttempts = 60;
+      const pollInterval = 5000; // 5 seconds
+      
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+          const transcriptResponse = await getVideoTranscript(videoId, true); // Silent mode - don't log 404s
+          if (transcriptResponse?.transcript) {
+            console.log(`✅ Transcript found after ${(attempt + 1) * 5} seconds`);
+            return {
+              message: "Video transcribed successfully",
+              transcript: transcriptResponse.transcript,
+              videoId,
+            };
+          }
+          // 404 is expected while transcription is in progress, don't log as error
+        } catch (error: any) {
+          // Only log non-404 errors (server errors, CORS, etc.)
+          if (error?.status !== 404) {
+            console.warn(`Polling attempt ${attempt + 1} failed:`, error);
+          }
+          // Continue polling even if there's an error
+        }
+        
+        // Log progress every 6 attempts (30 seconds)
+        if (attempt > 0 && attempt % 6 === 0) {
+          console.log(`Still processing transcription... (${(attempt + 1) * 5}s elapsed)`);
+        }
+        
+        // Wait before next attempt
+        if (attempt < maxAttempts - 1) {
+          await new Promise(resolve => setTimeout(resolve, pollInterval));
+        }
+      }
+      
+      // Timeout after max attempts
+      throw new Error("Transcription is taking longer than expected. Please try again in a few minutes or refresh the page.");
+    }
+
     if (response.error || !response.data) {
       console.error("Error transcribing video:", {
         error: response.error,
         errorMessage: response.errorUserMessage,
         status: response.status,
       });
+
+      // Return error message if available
+      if (response.errorUserMessage) {
+        throw new Error(response.errorUserMessage);
+      }
+
       return null;
     }
 
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error transcribing video:", error);
-    return null;
+    // Re-throw if it's a file size error
+    if (error.message && error.message.includes("25MB")) {
+      throw error;
+    }
+    throw error; // Re-throw to show error message to user
   }
 }
 
@@ -50,7 +107,8 @@ export async function transcribeVideo(
  * Get transcript for a video
  */
 export async function getVideoTranscript(
-  videoId: string
+  videoId: string,
+  silent: boolean = false // If true, don't log 404 errors (expected during polling)
 ): Promise<TranscriptResponse | null> {
   try {
     const response = await API<TranscriptResponse>(
@@ -61,17 +119,23 @@ export async function getVideoTranscript(
     );
 
     if (response.error || !response.data) {
-      console.error("Error fetching transcript:", {
-        error: response.error,
-        errorMessage: response.errorUserMessage,
-        status: response.status,
-      });
+      // 404 is expected while transcription is in progress, only log if not silent
+      if (!silent || response.status !== 404) {
+        console.error("Error fetching transcript:", {
+          error: response.error,
+          errorMessage: response.errorUserMessage,
+          status: response.status,
+        });
+      }
       return null;
     }
 
     return response.data;
-  } catch (error) {
-    console.error("Error fetching transcript:", error);
+  } catch (error: any) {
+    // Only log if not a 404 or if not silent
+    if (!silent || error?.status !== 404) {
+      console.error("Error fetching transcript:", error);
+    }
     return null;
   }
 }
@@ -104,4 +168,3 @@ export async function askAIMentor(
     return null;
   }
 }
-

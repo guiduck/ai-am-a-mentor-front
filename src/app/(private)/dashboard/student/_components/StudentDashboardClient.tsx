@@ -7,6 +7,7 @@ import { logoutUser } from "@/actions/logout";
 import { getEnrolledCourses, Course } from "@/services/courses";
 import { initializeAuthFromAPI } from "@/lib/auth-utils";
 import { Button } from "@/components/ui/Button/Button";
+import { Loading } from "@/components/ui/Loading/Loading";
 import styles from "../page.module.css";
 import { toast } from "sonner";
 
@@ -184,7 +185,9 @@ const totalInvestment = enrolledCourses.reduce(
         </div>
 
         {loading ? (
-          <div className={styles.emptyState}>Carregando cursos...</div>
+          <div className={styles.emptyState}>
+            <Loading text="Carregando cursos..." />
+          </div>
         ) : enrolledCourses.length === 0 ? (
           <div className={styles.emptyState}>
             Você ainda não se inscreveu em cursos. Explore o catálogo e comece

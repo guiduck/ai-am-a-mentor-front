@@ -33,7 +33,8 @@ const studentRoutes: NavItem[] = [
 
 const accountRoutes: NavItem[] = [
   { href: "/profile", label: "Perfil" },
-  { href: "/settings", label: "Configurações" },
+  { href: "/payments", label: "Pagamentos" },
+  { href: "/messages", label: "Mensagens" },
 ];
 
 export function PrivateNavigation({

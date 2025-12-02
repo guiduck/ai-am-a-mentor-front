@@ -36,6 +36,21 @@ export interface CreateVideoData {
 export interface UpdateVideoData {
   title?: string;
   duration?: number;
+  r2Key?: string;
+}
+
+export interface Comment {
+  id: string;
+  videoId: string;
+  userId: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  user?: {
+    id: string;
+    username: string;
+    email: string;
+  };
 }
 
 // Create a new video/lesson
@@ -287,5 +302,51 @@ export async function getVideoBlobUrl(videoId: string): Promise<string | null> {
   } catch (error) {
     console.error("Error creating video blob URL:", error);
     return null;
+  }
+}
+
+// Get comments for a video
+export async function getVideoComments(
+  videoId: string
+): Promise<Comment[]> {
+  try {
+    const response = await API<Comment[]>(`videos/${videoId}/comments`, {
+      method: "GET",
+    });
+
+    if (response.error || !response.data) {
+      throw new Error(
+        response.errorUserMessage || "Erro ao buscar comentários"
+      );
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching comments:", error);
+    throw error;
+  }
+}
+
+// Create a comment on a video
+export async function createComment(
+  videoId: string,
+  content: string
+): Promise<Comment> {
+  try {
+    const response = await API<Comment>(`videos/${videoId}/comments`, {
+      method: "POST",
+      data: { content },
+    });
+
+    if (response.error || !response.data) {
+      throw new Error(
+        response.errorUserMessage || "Erro ao criar comentário"
+      );
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error("Error creating comment:", error);
+    throw error;
   }
 }

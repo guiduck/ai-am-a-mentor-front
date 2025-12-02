@@ -1,0 +1,224 @@
+.container {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  padding: var(--space-4);
+}
+
+.innerContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: var(--space-6);
+}
+
+.header h1 {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.header p {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.placeholder {
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-bottom: var(--space-4);
+}
+
+.info {
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+  margin-bottom: var(--space-2);
+}
+
+.featuresList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.featuresList li {
+  padding-left: var(--space-4);
+  position: relative;
+  color: var(--text-secondary);
+}
+
+.featuresList li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--color-primary);
+  font-weight: var(--font-bold);
+}
+
+/* Balance Card */
+.balanceCard {
+  background: linear-gradient(135deg, var(--color-primary) 0%, #0056b3 100%);
+  color: white;
+}
+
+.balance {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-6) 0;
+  margin-bottom: var(--space-6);
+}
+
+.balanceAmount {
+  font-size: 64px;
+  font-weight: var(--font-bold);
+  line-height: 1;
+}
+
+.balanceLabel {
+  font-size: var(--text-base);
+  opacity: 0.9;
+  margin-top: var(--space-2);
+}
+
+.balanceInfo {
+  padding: var(--space-4);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.balanceInfo p {
+  margin: 0 0 var(--space-2) 0;
+  font-weight: var(--font-semibold);
+}
+
+.balanceInfo ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.balanceInfo li {
+  margin-bottom: 4px;
+  opacity: 0.9;
+}
+
+/* Transactions */
+.transactions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.transaction {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4);
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.transaction:hover {
+  background: var(--bg-hover, #f5f5f5);
+}
+
+.transactionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.transactionType {
+  font-weight: var(--font-semibold);
+  font-size: var(--text-sm);
+}
+
+.transactionDescription {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.transactionDate {
+  color: var(--text-tertiary, #999);
+  font-size: var(--text-xs);
+}
+
+.transactionAmount {
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  white-space: nowrap;
+  margin-left: var(--space-4);
+}
+
+.transactionAmount.positive {
+  color: var(--color-success, #28a745);
+}
+
+.transactionAmount.negative {
+  color: var(--color-error, #dc3545);
+}
+
+.emptyState {
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+  color: var(--text-secondary);
+}
+
+/* Creator Info */
+.creatorInfo {
+  font-size: var(--text-sm);
+}
+
+.creatorInfo p {
+  margin: 0 0 var(--space-3) 0;
+}
+
+.creatorInfo ul {
+  margin: 0 0 var(--space-4) 0;
+  padding-left: 20px;
+}
+
+.creatorInfo li {
+  margin-bottom: var(--space-2);
+  color: var(--text-secondary);
+}
+
+.note {
+  padding: var(--space-3);
+  background: #e7f3ff;
+  border-left: 4px solid #0066cc;
+  border-radius: 4px;
+  margin: var(--space-4) 0 0 0 !important;
+}
+
+@media (max-width: 768px) {
+  .balanceAmount {
+    font-size: 48px;
+  }
+
+  .transaction {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .transactionAmount {
+    margin-left: 0;
+  }
+}
+
+

@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuthStore } from "@/stores/authStore";
 import { getCourseById } from "@/services/courses";
-import { createVideo } from "@/services/videos";
+import { createVideo, generateUploadUrl } from "@/services/videos";
 import API from "@/lib/api";
 import { Button } from "@/components/ui/Button/Button";
 import {
@@ -42,6 +42,7 @@ export default function AddVideoPage() {
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [checkingAccess, setCheckingAccess] = useState(true);
 
   // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
@@ -114,12 +115,8 @@ export default function AddVideoPage() {
         return;
       }
 
-      // Validate file size (100MB limit)
-      const maxSize = 100 * 1024 * 1024; // 100MB
-      if (file.size > maxSize) {
-        toast.error("Arquivo muito grande. Tamanho máximo: 100MB");
-        return;
-      }
+      // No file size limit - Cloudflare R2 supports files of any size
+      // Browser limit is typically ~2GB, which is more than enough for video lessons
 
       setSelectedFile(file);
 
@@ -140,43 +137,66 @@ export default function AddVideoPage() {
 
     try {
       setUploading(true);
+      setUploadProgress(0);
 
-      // Step 1: Upload file directly to our backend (which uploads to R2)
-      toast.info("Enviando arquivo para o servidor...");
+      // Step 1: Get presigned URL for direct upload to R2
+      toast.info("Preparando upload...");
+      const uploadUrlData = await generateUploadUrl(
+        selectedFile.name,
+        selectedFile.type
+      );
 
-      const formData = new FormData();
-      formData.append("file", selectedFile);
+      // Step 2: Upload directly to R2 using presigned URL
+      toast.info("Fazendo upload do vídeo... (isso pode levar alguns minutos)");
 
-      // Use the centralized API service for upload
-      const uploadResponse = await API<{
-        key: string;
-        filename: string;
-        contentType: string;
-        size: number;
-        message: string;
-      }>("videos/upload-direct", {
-        method: "POST",
-        data: formData,
+      // Use XMLHttpRequest for progress tracking
+      const uploadPromise = new Promise<string>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable) {
+            const percentComplete = (e.loaded / e.total) * 100;
+            setUploadProgress(percentComplete);
+          }
+        });
+
+        xhr.addEventListener("load", () => {
+          // R2 returns 200 on successful PUT upload
+          if (xhr.status === 200 || xhr.status === 204) {
+            resolve(uploadUrlData.key);
+          } else {
+            reject(
+              new Error(
+                `Upload failed with status ${xhr.status}: ${xhr.statusText}`
+              )
+            );
+          }
+        });
+
+        xhr.addEventListener("error", () => {
+          reject(new Error("Upload failed due to network error"));
+        });
+
+        xhr.addEventListener("abort", () => {
+          reject(new Error("Upload was cancelled"));
+        });
+
+        // Use PUT method with presigned URL (R2/S3 compatible)
+        xhr.open("PUT", uploadUrlData.uploadUrl);
+        xhr.setRequestHeader("Content-Type", selectedFile.type);
+        // Don't set Content-Length, browser will handle it
+        xhr.send(selectedFile);
       });
 
-      if (uploadResponse.error || !uploadResponse.data) {
-        console.error("Upload failed:", uploadResponse.debug);
-        throw new Error(
-          `Upload falhou: ${
-            uploadResponse.errorUserMessage || "Erro desconhecido"
-          }`
-        );
-      }
-
-      const uploadResult = uploadResponse.data;
+      const r2Key = await uploadPromise;
       toast.success("Upload concluído!");
 
-      // Step 2: Create video record in database
+      // Step 3: Create video record in database
       toast.info("Salvando informações do vídeo...");
       await createVideo({
         courseId,
         title: data.title,
-        r2Key: uploadResult.key,
+        r2Key: r2Key,
         duration: data.duration,
       });
 
@@ -184,9 +204,25 @@ export default function AddVideoPage() {
       router.push(`/course/${courseId}`);
     } catch (error: any) {
       console.error("Error adding video:", error);
-      toast.error(error.message || "Erro ao adicionar vídeo");
+      
+      // Check if it's a CORS error
+      if (
+        error.message?.includes("CORS") ||
+        error.message?.includes("blocked by CORS") ||
+        error.message?.includes("Access-Control-Allow-Origin") ||
+        error.message?.includes("network error") ||
+        error.message?.includes("ERR_FAILED")
+      ) {
+        toast.error(
+          "Erro de CORS: Configure a política CORS do Cloudflare R2 para permitir PUT requests. Veja api/CORS_SETUP.md para instruções detalhadas.",
+          { duration: 10000 }
+        );
+      } else {
+        toast.error(error.message || "Erro ao adicionar vídeo");
+      }
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -243,7 +279,7 @@ export default function AddVideoPage() {
                         <div className={styles.uploadIcon}>📁</div>
                         <p>Clique para selecionar um arquivo de vídeo</p>
                         <p className={styles.uploadHint}>
-                          Formatos suportados: MP4, MOV, AVI (máx. 100MB)
+                          Formatos suportados: MP4, MOV, AVI (sem limite de tamanho)
                         </p>
                       </div>
                     )}
@@ -321,11 +357,20 @@ export default function AddVideoPage() {
             <CardContent>
               <div className={styles.progressInfo}>
                 <div className={styles.progressIcon}>⏳</div>
-                <div>
-                  <p className={styles.progressTitle}>Processando vídeo...</p>
+                <div style={{ flex: 1 }}>
+                  <p className={styles.progressTitle}>
+                    Fazendo upload do vídeo... {Math.round(uploadProgress)}%
+                  </p>
+                  <div className={styles.progressBarContainer}>
+                    <div
+                      className={styles.progressBar}
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
                   <p className={styles.progressText}>
-                    Isso pode levar alguns minutos dependendo do tamanho do
-                    arquivo
+                    {uploadProgress < 100
+                      ? "Isso pode levar alguns minutos dependendo do tamanho do arquivo"
+                      : "Finalizando..."}
                   </p>
                 </div>
               </div>

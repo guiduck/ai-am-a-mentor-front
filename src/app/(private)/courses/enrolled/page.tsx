@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/Card/Card";
+import { FullPageLoading } from "@/components/ui/Loading/Loading";
 import styles from "./page.module.css";
 import { toast } from "sonner";
 
@@ -49,13 +50,7 @@ export default function EnrolledCoursesPage() {
   };
 
   if (loading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.innerContainer}>
-          <h1>Carregando cursos...</h1>
-        </div>
-      </div>
-    );
+    return <FullPageLoading text="Carregando cursos..." />;
   }
 
   return (

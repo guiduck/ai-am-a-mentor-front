@@ -13,6 +13,7 @@ import {
 import { getCourseVideos, Video } from "@/services/videos";
 import { Button } from "@/components/ui/Button/Button";
 import { toast } from "sonner";
+import { FullPageLoading } from "@/components/ui/Loading/Loading";
 import styles from "./page.module.css";
 
 export default function CourseDetailPage() {
@@ -100,11 +101,7 @@ export default function CourseDetailPage() {
   };
 
   if (loading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.loading}>Carregando curso...</div>
-      </div>
-    );
+    return <FullPageLoading text="Carregando curso..." />;
   }
 
   if (!course) {

@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/Card/Card";
+import { FullPageLoading } from "@/components/ui/Loading/Loading";
 import styles from "./page.module.css";
 import { toast } from "sonner";
 
@@ -162,13 +163,7 @@ export default function CreatorCoursesPage() {
   };
 
   if (loading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.innerContainer}>
-          <h1>Carregando cursos...</h1>
-        </div>
-      </div>
-    );
+    return <FullPageLoading text="Carregando cursos..." />;
   }
 
   return (
@@ -180,10 +175,10 @@ export default function CreatorCoursesPage() {
             <p>Gerencie todos os seus cursos</p>
           </div>
           <Button
-            onClick={() => router.push("/courses/create")}
-            variant="primary"
+            onClick={() => router.push("/dashboard/creator")}
+            variant="outline"
           >
-            Criar Novo Curso
+            ← Voltar ao Dashboard
           </Button>
         </div>
 

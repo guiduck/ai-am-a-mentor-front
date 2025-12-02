@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { getCourses } from "@/services/courses";
 import { Button } from "@/components/ui/Button/Button";
+import { FullPageLoading } from "@/components/ui/Loading/Loading";
 import styles from "./page.module.css";
 import { toast } from "sonner";
 
@@ -117,13 +118,7 @@ export default function CoursesPage() {
   };
 
   if (loading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.innerContainer}>
-          <h1>Carregando cursos...</h1>
-        </div>
-      </div>
-    );
+    return <FullPageLoading text="Carregando cursos..." />;
   }
 
   return (
