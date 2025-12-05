@@ -1,9 +1,10 @@
 "use client";
 
-import { ReactNode, useMemo, useState } from "react";
+import { ReactNode, useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import styles from "./PrivateNavigation.module.css";
+import { getCreditBalance } from "@/services/payments";
 
 type Role = "creator" | "student" | undefined;
 
@@ -21,7 +22,6 @@ interface NavItem {
 const creatorRoutes: NavItem[] = [
   { href: "/dashboard/creator", label: "Dashboard" },
   { href: "/courses/manage", label: "Gerenciar cursos" },
-  { href: "/courses/create", label: "Novo curso" },
   { href: "/courses", label: "Biblioteca" },
 ];
 
@@ -43,12 +43,24 @@ export function PrivateNavigation({
   children,
 }: PrivateNavigationProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [credits, setCredits] = useState<number | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
   const navLinks = useMemo<NavItem[]>(() => {
     return role === "creator" ? creatorRoutes : studentRoutes;
   }, [role]);
+
+  // Fetch credit balance
+  useEffect(() => {
+    const fetchCredits = async () => {
+      const balance = await getCreditBalance();
+      if (balance) {
+        setCredits(balance.balance);
+      }
+    };
+    fetchCredits();
+  }, [pathname]); // Refresh when navigating
 
   const handleNavigate = (href: string) => {
     setMenuOpen(false);
@@ -101,11 +113,36 @@ export function PrivateNavigation({
           </span>
         </div>
 
+        {/* Credit Balance Card */}
+        <button
+          onClick={() => handleNavigate("/payments")}
+          className={styles.creditsCard}
+        >
+          <span className={styles.creditsIcon}>💰</span>
+          <div className={styles.creditsInfo}>
+            <span className={styles.creditsLabel}>Créditos</span>
+            <strong className={styles.creditsValue}>
+              {credits !== null ? credits : "..."}
+            </strong>
+          </div>
+          <span className={styles.creditsAdd}>+</span>
+        </button>
+
         <nav className={styles.navigation}>
           <p className={styles.sectionLabel}>
             {role === "creator" ? "Gerenciar" : "Aprender"}
           </p>
           <ul>{navLinks.map(renderNavItem)}</ul>
+
+          {/* Novo Curso button for creators */}
+          {role === "creator" && (
+            <button
+              onClick={() => handleNavigate("/courses/create")}
+              className={styles.newCourseButton}
+            >
+              + Novo Curso
+            </button>
+          )}
 
           <p className={styles.sectionLabel}>Conta</p>
           <ul>{accountRoutes.map(renderNavItem)}</ul>

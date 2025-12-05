@@ -27,6 +27,9 @@ import {
 } from "@/components/ui/Card/Card";
 import { toast } from "sonner";
 import { FullPageLoading, Loading } from "@/components/ui/Loading/Loading";
+import GenerateQuizButton from "@/components/quiz/GenerateQuizButton";
+import QuizModal from "@/components/quiz/QuizModal";
+import { getQuizByVideoId, Quiz } from "@/services/quizzes";
 import styles from "./page.module.css";
 
 interface ChatMessage {
@@ -72,6 +75,10 @@ export default function LessonPage() {
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
+
+  // Quiz state
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [showQuizModal, setShowQuizModal] = useState(false);
 
   useEffect(() => {
     if (courseId && videoId && user) {
@@ -127,8 +134,8 @@ export default function LessonPage() {
         handleAutoTranscribe();
       }
 
-      // Load comments
-      await loadComments();
+      // Load comments and quiz
+      await Promise.all([loadComments(), loadQuiz()]);
     } catch (error) {
       console.error("Error loading lesson data:", error);
       toast.error("Erro ao carregar aula");
@@ -136,6 +143,26 @@ export default function LessonPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadQuiz = async () => {
+    try {
+      const quizData = await getQuizByVideoId(videoId);
+      setQuiz(quizData);
+    } catch (error) {
+      console.error("Error loading quiz:", error);
+    }
+  };
+
+  const handleQuizGenerated = async () => {
+    await loadQuiz();
+  };
+
+  const handleQuizComplete = (passed: boolean) => {
+    if (passed) {
+      toast.success("Parabéns! Você passou no quiz!");
+    }
+    loadQuiz(); // Refresh quiz data
   };
 
   const loadComments = async () => {
@@ -364,6 +391,43 @@ export default function LessonPage() {
                   </div>
                 </div>
 
+                {/* Quiz Section */}
+                <div className={styles.quizSection}>
+                  {user?.role === "creator" ? (
+                    // Creator view: Generate quiz button
+                    <GenerateQuizButton
+                      videoId={videoId}
+                      videoTitle={video.title}
+                      hasTranscript={hasTranscript}
+                      onQuizGenerated={handleQuizGenerated}
+                    />
+                  ) : quiz ? (
+                    // Student view: Take quiz button
+                    <div className={styles.quizAvailable}>
+                      <div className={styles.quizInfo}>
+                        <span className={styles.quizIcon}>📝</span>
+                        <div>
+                          <strong>{quiz.title}</strong>
+                          <p>{quiz.questionsCount} perguntas • Mínimo {quiz.passingScore}% para passar</p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => setShowQuizModal(true)}
+                        variant="primary"
+                        size="small"
+                      >
+                        Fazer Quiz
+                      </Button>
+                    </div>
+                  ) : (
+                    // No quiz available
+                    <div className={styles.noQuiz}>
+                      <span>📋</span>
+                      <span>Nenhum quiz disponível para esta aula</span>
+                    </div>
+                  )}
+                </div>
+
                 {/* Comments Section - Moved inside video card */}
                 <div className={styles.commentsSection}>
                   <CardHeader>
@@ -558,6 +622,15 @@ export default function LessonPage() {
             </Card>
           </div>
         )}
+
+        {/* Quiz Modal */}
+        <QuizModal
+          videoId={videoId}
+          videoTitle={video?.title || ""}
+          isOpen={showQuizModal}
+          onClose={() => setShowQuizModal(false)}
+          onComplete={handleQuizComplete}
+        />
       </div>
     </div>
   );

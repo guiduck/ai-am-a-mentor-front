@@ -26,8 +26,9 @@
 }
 
 .package.popular {
-  border-color: var(--primary);
-  background: linear-gradient(135deg, var(--background) 0%, rgba(var(--primary-rgb), 0.05) 100%);
+  border-color: var(--color-gray-900);
+  border-width: 3px;
+  background: var(--color-primary);
 }
 
 .badge {
@@ -109,6 +110,73 @@
   color: var(--text-secondary);
 }
 
+.note {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: var(--color-gray-100);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Payment Method Selection */
+.paymentMethodSection {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.sectionTitle {
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.paymentMethods {
+  display: flex;
+  gap: 12px;
+}
+
+.paymentMethodButton {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  border: 2px solid var(--color-gray-300);
+  border-radius: 12px;
+  background: var(--color-white);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.paymentMethodButton:hover {
+  border-color: var(--color-gray-900);
+}
+
+.paymentMethodButton.selected {
+  border-color: var(--color-gray-900);
+  background: var(--color-primary);
+  font-weight: 600;
+}
+
+.methodIcon {
+  font-size: 20px;
+}
+
+.boletoNote {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #fff8e6;
+  border: 1px solid #ffd666;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #8a6d3b;
+}
+
 /* Checkout Form */
 .checkoutForm {
   display: flex;
@@ -162,4 +230,7 @@
     width: 100%;
   }
 }
+
+
+
 

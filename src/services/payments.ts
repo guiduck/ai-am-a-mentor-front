@@ -21,122 +21,83 @@ export interface Transaction {
   createdAt: string;
 }
 
+export type PaymentMethod = "card" | "boleto";
+
 export interface PaymentIntent {
   clientSecret: string;
   paymentIntentId: string;
   amount: number;
   creditsAmount?: number;
   courseId?: string;
+  paymentMethod?: PaymentMethod;
+  // Boleto specific data
+  boletoUrl?: string;
+  boletoNumber?: string;
+  boletoExpiresAt?: number;
 }
 
 /**
  * Get user's credit balance
  */
 export async function getCreditBalance(): Promise<CreditBalance | null> {
-  try {
-    const response = await API<CreditBalance>("/credits/balance", {
-      method: "GET",
-    });
-
-    if (response.error || !response.data) {
-      console.error("Error getting credit balance:", response.errorUserMessage);
-      return null;
-    }
-
-    return response.data;
-  } catch (error) {
-    console.error("Error getting credit balance:", error);
+  const response = await API<CreditBalance>("credits/balance");
+  if (response.error || !response.data) {
+    console.error("Error getting credit balance:", response.errorUserMessage);
     return null;
   }
+  return response.data;
 }
 
 /**
  * Get user's transaction history
  */
 export async function getTransactions(): Promise<Transaction[]> {
-  try {
-    const response = await API<Transaction[]>("/credits/transactions", {
-      method: "GET",
-    });
-
-    if (response.error || !response.data) {
-      console.error("Error getting transactions:", response.errorUserMessage);
-      return [];
-    }
-
-    return response.data;
-  } catch (error) {
-    console.error("Error getting transactions:", error);
+  const response = await API<Transaction[]>("credits/transactions");
+  if (response.error || !response.data) {
+    console.error("Error getting transactions:", response.errorUserMessage);
     return [];
   }
+  return response.data;
 }
 
 /**
  * Create payment intent for purchasing credits
+ * @param paymentMethod - "card" or "boleto"
  */
 export async function createCreditsPaymentIntent(
   amount: number,
-  creditsAmount: number
+  creditsAmount: number,
+  paymentMethod: PaymentMethod = "card"
 ): Promise<PaymentIntent | null> {
-  try {
-    const response = await API<PaymentIntent>(
-      "/payments/credits/create-intent",
-      {
-        method: "POST",
-        data: {
-          amount,
-          creditsAmount,
-        },
-      }
-    );
-
-    if (response.error || !response.data) {
-      console.error(
-        "Error creating payment intent:",
-        response.errorUserMessage
-      );
-      return null;
-    }
-
-    return response.data;
-  } catch (error) {
-    console.error("Error creating payment intent:", error);
+  const response = await API<PaymentIntent>("payments/credits/create-intent", {
+    method: "POST",
+    data: { amount, creditsAmount, paymentMethod },
+  });
+  if (response.error || !response.data) {
+    console.error("Error creating payment intent:", response.errorUserMessage);
     return null;
   }
+  return response.data;
 }
 
 /**
  * Create payment intent for purchasing a course
+ * @param paymentMethod - "card" or "boleto"
  */
 export async function createCoursePaymentIntent(
   courseId: string,
-  amount: number
+  amount: number,
+  paymentMethod: PaymentMethod = "card"
 ): Promise<PaymentIntent | null> {
-  try {
-    const response = await API<PaymentIntent>(
-      "/payments/course/create-intent",
-      {
-        method: "POST",
-        data: {
-          courseId,
-          amount,
-        },
-      }
-    );
-
-    if (response.error || !response.data) {
-      console.error(
-        "Error creating course payment intent:",
-        response.errorUserMessage
-      );
-      return null;
-    }
-
-    return response.data;
-  } catch (error) {
-    console.error("Error creating course payment intent:", error);
+  const response = await API<PaymentIntent>("payments/course/create-intent", {
+    method: "POST",
+    data: { courseId, amount, paymentMethod },
+  });
+  if (response.error || !response.data) {
+    console.error("Error creating course payment intent:", response.errorUserMessage);
     return null;
   }
+  return response.data;
 }
 
 /**
@@ -145,59 +106,15 @@ export async function createCoursePaymentIntent(
 export async function confirmPayment(
   paymentIntentId: string
 ): Promise<{ success: boolean; status: string } | null> {
-  try {
-    const response = await API<{ success: boolean; status: string }>(
-      "/payments/confirm",
-      {
-        method: "POST",
-        data: {
-          paymentIntentId,
-        },
-      }
-    );
-
-    if (response.error || !response.data) {
-      console.error("Error confirming payment:", response.errorUserMessage);
-      return null;
-    }
-
-    return response.data;
-  } catch (error) {
-    console.error("Error confirming payment:", error);
+  const response = await API<{ success: boolean; status: string }>("payments/confirm", {
+    method: "POST",
+    data: { paymentIntentId },
+  });
+  if (response.error || !response.data) {
+    console.error("Error confirming payment:", response.errorUserMessage);
     return null;
   }
-}
-
-/**
- * Purchase course with credits
- */
-export async function purchaseCourseWithCredits(
-  courseId: string
-): Promise<{ success: boolean; message?: string } | null> {
-  try {
-    const response = await API<{ success: boolean; message?: string }>(
-      "/payments/course/purchase-with-credits",
-      {
-        method: "POST",
-        data: {
-          courseId,
-        },
-      }
-    );
-
-    if (response.error || !response.data) {
-      console.error(
-        "Error purchasing course with credits:",
-        response.errorUserMessage
-      );
-      return null;
-    }
-
-    return response.data;
-  } catch (error) {
-    console.error("Error purchasing course with credits:", error);
-    return null;
-  }
+  return response.data;
 }
 
 /**

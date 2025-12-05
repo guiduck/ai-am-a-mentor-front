@@ -107,6 +107,84 @@
   font-weight: var(--font-semibold);
 }
 
+/* Credits Card */
+.creditsCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-xl);
+  border: 2px solid var(--color-gray-900);
+  background: var(--color-primary);
+  color: var(--color-gray-900);
+  cursor: pointer;
+  transition: var(--transition-base);
+  text-align: left;
+  width: 100%;
+}
+
+.creditsCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 201, 0, 0.4);
+  background: var(--color-primary-light);
+}
+
+.creditsIcon {
+  font-size: var(--text-xl);
+}
+
+.creditsInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.creditsLabel {
+  font-size: var(--text-xs);
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.creditsValue {
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+}
+
+.creditsAdd {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--color-gray-900);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+}
+
+/* New Course Button */
+.newCourseButton {
+  width: 100%;
+  padding: var(--space-3);
+  margin-top: var(--space-2);
+  border-radius: var(--radius-xl);
+  border: 2px dashed var(--color-primary);
+  background: transparent;
+  color: var(--color-primary);
+  font-weight: var(--font-semibold);
+  font-size: var(--text-base);
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.newCourseButton:hover {
+  background: var(--color-primary);
+  color: white;
+  border-style: solid;
+}
+
 .navigation {
   flex: 1;
   display: flex;

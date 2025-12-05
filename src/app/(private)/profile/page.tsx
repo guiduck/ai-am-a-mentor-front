@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { getCurrentUser, User } from "@/services/users";
 import { updateProfile } from "@/actions/profile";
+import { getCreditBalance } from "@/services/payments";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/Button/Button";
@@ -52,6 +53,7 @@ export default function ProfilePage() {
   const { user, setAuth } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<User | null>(null);
+  const [credits, setCredits] = useState<number | null>(null);
 
   const {
     register,
@@ -64,7 +66,15 @@ export default function ProfilePage() {
 
   useEffect(() => {
     loadUserData();
+    loadCredits();
   }, []);
+
+  const loadCredits = async () => {
+    const balance = await getCreditBalance();
+    if (balance) {
+      setCredits(balance.balance);
+    }
+  };
 
   const loadUserData = async () => {
     try {
@@ -318,32 +328,53 @@ export default function ProfilePage() {
               style={{
                 fontSize: "var(--text-base)",
                 fontWeight: 600,
-                marginBottom: "var(--space-3)",
+                marginBottom: "var(--space-4)",
               }}
             >
               Informações da conta
             </h3>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "var(--space-2)",
-                fontSize: "var(--text-sm)",
-                color: "var(--text-secondary)",
-              }}
-            >
-              <p>
-                <strong>Papel:</strong>{" "}
-                {userData.role === "creator" ? "Criador" : "Estudante"}
-              </p>
-              <p>
-                <strong>Conta criada em:</strong>{" "}
-                {new Date(userData.createdAt).toLocaleDateString("pt-BR")}
-              </p>
-              <p>
-                <strong>Última atualização:</strong>{" "}
-                {new Date(userData.updatedAt).toLocaleDateString("pt-BR")}
-              </p>
+            <div className={styles.infoGrid}>
+              <div className={styles.infoCard}>
+                <span className={styles.infoLabel}>ID</span>
+                <span className={styles.infoValue} style={{ fontSize: "var(--text-xs)", wordBreak: "break-all" }}>
+                  {userData.id}
+                </span>
+              </div>
+              <div className={styles.infoCard}>
+                <span className={styles.infoLabel}>Nome</span>
+                <span className={styles.infoValue}>{userData.username}</span>
+              </div>
+              <div className={styles.infoCard}>
+                <span className={styles.infoLabel}>Email</span>
+                <span className={styles.infoValue}>{userData.email}</span>
+              </div>
+              <div className={styles.infoCard}>
+                <span className={styles.infoLabel}>Função</span>
+                <span className={styles.infoValue}>
+                  {userData.role === "creator" ? "Criador" : "Estudante"}
+                </span>
+              </div>
+              <div className={styles.infoCard} style={{ background: "var(--color-primary)", border: "2px solid var(--color-gray-900)" }}>
+                <span className={styles.infoLabel} style={{ color: "var(--color-gray-700)" }}>Créditos</span>
+                <span className={styles.infoValue} style={{ color: "var(--color-gray-900)", fontSize: "var(--text-2xl)" }}>
+                  💰 {credits !== null ? credits : "..."}
+                </span>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="small"
+                  onClick={() => router.push("/payments")}
+                  style={{ marginTop: "var(--space-2)", background: "var(--color-gray-900)", color: "var(--color-primary)", border: "none" }}
+                >
+                  + Comprar créditos
+                </Button>
+              </div>
+              <div className={styles.infoCard}>
+                <span className={styles.infoLabel}>Membro desde</span>
+                <span className={styles.infoValue}>
+                  {new Date(userData.createdAt).toLocaleDateString("pt-BR")}
+                </span>
+              </div>
             </div>
           </div>
         </CardContent>

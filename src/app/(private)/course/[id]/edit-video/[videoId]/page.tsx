@@ -125,7 +125,7 @@ export default function EditVideoPage() {
           selectedFile.type
         );
 
-        if (!uploadUrlResponse?.url) {
+        if (!uploadUrlResponse?.uploadUrl) {
           throw new Error("Failed to get upload URL");
         }
 
@@ -152,7 +152,7 @@ export default function EditVideoPage() {
             reject(new Error("Upload failed due to network error"));
           });
 
-          xhr.open("PUT", uploadUrlResponse.url);
+          xhr.open("PUT", uploadUrlResponse.uploadUrl);
           xhr.setRequestHeader("Content-Type", selectedFile.type);
           xhr.send(selectedFile);
         });

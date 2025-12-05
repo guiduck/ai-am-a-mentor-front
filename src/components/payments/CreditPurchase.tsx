@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { getStripe } from "@/lib/stripe";
-import { createCreditsPaymentIntent, confirmPayment } from "@/services/payments";
+import { createCreditsPaymentIntent, confirmPayment, PaymentMethod } from "@/services/payments";
 import { Button } from "@/components/ui/Button/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card/Card";
 import styles from "./CreditPurchase.module.css";
@@ -15,11 +15,17 @@ interface CreditPackage {
   popular?: boolean;
 }
 
+// 1000 credits = R$ 10 (base rate)
 const CREDIT_PACKAGES: CreditPackage[] = [
-  { credits: 10, price: 10 },
-  { credits: 50, price: 45, bonus: 5, popular: true },
-  { credits: 100, price: 80, bonus: 20 },
-  { credits: 500, price: 350, bonus: 150 },
+  { credits: 500, price: 5 },
+  { credits: 1000, price: 10, popular: true },
+  { credits: 2500, price: 22, bonus: 300 },
+  { credits: 5000, price: 40, bonus: 1000 },
+];
+
+const PAYMENT_METHODS: { id: PaymentMethod; label: string; icon: string }[] = [
+  { id: "card", label: "Cartão de Crédito", icon: "💳" },
+  { id: "boleto", label: "Boleto Bancário", icon: "📄" },
 ];
 
 interface CheckoutFormProps {
@@ -109,19 +115,31 @@ interface CreditPurchaseProps {
 
 export default function CreditPurchase({ onPurchaseComplete }: CreditPurchaseProps) {
   const [selectedPackage, setSelectedPackage] = useState<CreditPackage | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>("card");
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [boletoData, setBoletoData] = useState<{ url?: string; number?: string; expiresAt?: number } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSelectPackage = async (pkg: CreditPackage) => {
     setIsLoading(true);
     setSelectedPackage(pkg);
+    setBoletoData(null);
 
     try {
       const totalCredits = pkg.credits + (pkg.bonus || 0);
-      const paymentIntent = await createCreditsPaymentIntent(pkg.price, totalCredits);
+      const paymentIntent = await createCreditsPaymentIntent(pkg.price, totalCredits, selectedPaymentMethod);
 
       if (paymentIntent && paymentIntent.clientSecret) {
         setClientSecret(paymentIntent.clientSecret);
+        
+        // If boleto, save boleto data
+        if (selectedPaymentMethod === "boleto" && paymentIntent.boletoUrl) {
+          setBoletoData({
+            url: paymentIntent.boletoUrl,
+            number: paymentIntent.boletoNumber,
+            expiresAt: paymentIntent.boletoExpiresAt,
+          });
+        }
       } else {
         alert("Erro ao criar intenção de pagamento");
         setSelectedPackage(null);
@@ -138,11 +156,13 @@ export default function CreditPurchase({ onPurchaseComplete }: CreditPurchasePro
   const handleCancel = () => {
     setSelectedPackage(null);
     setClientSecret(null);
+    setBoletoData(null);
   };
 
   const handleSuccess = () => {
     setSelectedPackage(null);
     setClientSecret(null);
+    setBoletoData(null);
     onPurchaseComplete();
   };
 
@@ -178,6 +198,29 @@ export default function CreditPurchase({ onPurchaseComplete }: CreditPurchasePro
         <p className={styles.description}>
           Escolha um pacote de créditos para usar na plataforma
         </p>
+
+        {/* Payment Method Selection */}
+        <div className={styles.paymentMethodSection}>
+          <p className={styles.sectionTitle}>Forma de pagamento:</p>
+          <div className={styles.paymentMethods}>
+            {PAYMENT_METHODS.map((method) => (
+              <button
+                key={method.id}
+                type="button"
+                className={`${styles.paymentMethodButton} ${selectedPaymentMethod === method.id ? styles.selected : ""}`}
+                onClick={() => setSelectedPaymentMethod(method.id)}
+              >
+                <span className={styles.methodIcon}>{method.icon}</span>
+                <span>{method.label}</span>
+              </button>
+            ))}
+          </div>
+          {selectedPaymentMethod === "boleto" && (
+            <p className={styles.boletoNote}>
+              ⏰ Boletos vencem em 3 dias úteis. Créditos são liberados após confirmação do pagamento.
+            </p>
+          )}
+        </div>
 
         <div className={styles.packages}>
           {CREDIT_PACKAGES.map((pkg, index) => (
@@ -218,15 +261,20 @@ export default function CreditPurchase({ onPurchaseComplete }: CreditPurchasePro
         </div>
 
         <div className={styles.info}>
-          <p><strong>O que você pode fazer com créditos:</strong></p>
+          <p><strong>Créditos são usados para recursos de IA:</strong></p>
           <ul>
-            <li>Upload de vídeos (1 crédito por minuto)</li>
-            <li>Gerar quizzes com IA (5 créditos por quiz)</li>
-            <li>Comprar cursos (varia por curso)</li>
+            <li>💬 Perguntas ao mentor IA (~10 créditos por pergunta)</li>
+            <li>🤖 Gerar quizzes automáticos (~50 créditos por quiz)</li>
           </ul>
+          <p className={styles.note}>
+            📌 Cursos são comprados diretamente com cartão ou boleto
+          </p>
         </div>
       </CardContent>
     </Card>
   );
 }
+
+
+
 

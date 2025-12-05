@@ -69,8 +69,9 @@
 
 /* Balance Card */
 .balanceCard {
-  background: linear-gradient(135deg, var(--color-primary) 0%, #0056b3 100%);
-  color: white;
+  background: var(--color-primary);
+  border: 2px solid var(--color-gray-900);
+  color: var(--color-gray-900);
 }
 
 .balance {
@@ -89,13 +90,13 @@
 
 .balanceLabel {
   font-size: var(--text-base);
-  opacity: 0.9;
+  opacity: 0.8;
   margin-top: var(--space-2);
 }
 
 .balanceInfo {
   padding: var(--space-4);
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.08);
   border-radius: 8px;
 }
 
@@ -111,7 +112,7 @@
 
 .balanceInfo li {
   margin-bottom: 4px;
-  opacity: 0.9;
+  opacity: 0.85;
 }
 
 /* Transactions */

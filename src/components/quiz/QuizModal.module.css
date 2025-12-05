@@ -1,0 +1,392 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  background: var(--color-white);
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.closeButton {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-gray-100);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.closeButton:hover {
+  background: var(--color-gray-200);
+}
+
+/* Loading State */
+.loading {
+  padding: 60px;
+  text-align: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-gray-200);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* No Quiz State */
+.noQuiz {
+  padding: 60px 40px;
+  text-align: center;
+}
+
+.noQuizIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.noQuiz h3 {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.noQuiz p {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+/* Header */
+.header {
+  padding: 24px 24px 0;
+  text-align: center;
+}
+
+.header h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Progress */
+.progress {
+  padding: 20px 24px;
+}
+
+.progressBar {
+  height: 6px;
+  background: var(--color-gray-200);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progressText {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Question Card */
+.questionCard {
+  padding: 0 24px;
+}
+
+.questionText {
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 2px solid var(--color-gray-200);
+  border-radius: 12px;
+  background: var(--color-white);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.option:hover {
+  border-color: var(--color-gray-400);
+}
+
+.option.selected {
+  border-color: var(--color-gray-900);
+  background: var(--color-gray-50);
+}
+
+.optionLetter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-gray-100);
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.option.selected .optionLetter {
+  background: var(--color-gray-900);
+  color: var(--color-white);
+}
+
+.optionText {
+  font-size: 15px;
+  line-height: 1.4;
+  padding-top: 4px;
+}
+
+/* Navigation */
+.navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  border-top: 1px solid var(--color-gray-100);
+  margin-top: 24px;
+}
+
+.questionDots {
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--color-gray-300);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s;
+}
+
+.dot:hover {
+  border-color: var(--color-gray-500);
+}
+
+.dot.activeDot {
+  border-color: var(--color-gray-900);
+  background: var(--color-gray-900);
+}
+
+.dot.answeredDot {
+  background: var(--color-success);
+  border-color: var(--color-success);
+}
+
+/* Results View */
+.results {
+  padding: 24px;
+}
+
+.resultHeader {
+  text-align: center;
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.resultHeader.passed {
+  background: #dcfce7;
+}
+
+.resultHeader.failed {
+  background: #fee2e2;
+}
+
+.resultIcon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.resultHeader h2 {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.resultMessage {
+  color: var(--text-secondary);
+}
+
+.scoreCard {
+  text-align: center;
+  padding: 24px;
+  background: var(--color-gray-50);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.scoreCircle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: var(--color-white);
+  border: 4px solid var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.scoreValue {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.passingNote {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.resultsList {
+  margin-bottom: 24px;
+}
+
+.resultsList h4 {
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+
+.resultItem {
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.resultItem.correct {
+  background: #dcfce7;
+  border-left: 4px solid var(--color-success);
+}
+
+.resultItem.incorrect {
+  background: #fee2e2;
+  border-left: 4px solid var(--color-error);
+}
+
+.resultQuestion {
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.resultNumber {
+  margin-right: 8px;
+}
+
+.resultAnswer {
+  font-size: 14px;
+}
+
+.correctAnswer {
+  color: var(--color-success);
+  margin-top: 4px;
+}
+
+.explanation {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+.resultActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  .modal {
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .navigation {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .questionDots {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .resultActions {
+    flex-direction: column;
+  }
+}

@@ -2,15 +2,19 @@
 
 /* === COLORS === */
 :root {
-  /* Primary Colors (Codecademy x Gumroad inspired) */
-  --color-primary: #6c63ff;
-  --color-primary-dark: #4f46e5;
-  --color-primary-light: #a5a1ff;
+  /* Primary Colors - Codecademy Yellow */
+  --color-primary: #ffc900;
+  --color-primary-dark: #e5b500;
+  --color-primary-light: #ffda4d;
 
-  /* Secondary Colors */
-  --color-secondary: #ffb703;
-  --color-secondary-dark: #e09a00;
-  --color-secondary-light: #ffd166;
+  /* Accent Colors - Dark/Navy */
+  --color-accent: #10162f;
+  --color-accent-hover: #1a2444;
+
+  /* Secondary Colors - Indigo/Purple for special elements */
+  --color-secondary: #5a67d8;
+  --color-secondary-dark: #4c51bf;
+  --color-secondary-light: #7f8cf5;
 
   /* Neutral Colors */
   --color-white: #ffffff;

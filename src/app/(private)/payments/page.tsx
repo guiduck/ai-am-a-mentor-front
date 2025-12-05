@@ -5,6 +5,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card/Card";
 import { FullPageLoading } from "@/components/ui/Loading/Loading";
 import CreditPurchase from "@/components/payments/CreditPurchase";
+import CreatorBankSetup from "@/components/payments/CreatorBankSetup";
 import { getCreditBalance, getTransactions } from "@/services/payments";
 import type { CreditBalance, Transaction } from "@/services/payments";
 import styles from "./page.module.css";
@@ -59,12 +60,17 @@ export default function PaymentsPage() {
                 <span className={styles.balanceLabel}>créditos disponíveis</span>
               </div>
               <div className={styles.balanceInfo}>
-                <p><strong>O que você pode fazer:</strong></p>
+                <p><strong>Créditos são usados apenas para recursos de IA:</strong></p>
                 <ul>
-                  <li>Upload de vídeos: 1 crédito/minuto</li>
-                  <li>Gerar quiz com IA: 5 créditos</li>
-                  <li>Comprar cursos: varia por curso</li>
+                  {user?.role === "creator" ? (
+                    <li>🤖 Gerar quiz automático com IA: ~50 créditos</li>
+                  ) : (
+                    <li>💬 Fazer perguntas ao mentor IA: ~10 créditos por pergunta</li>
+                  )}
                 </ul>
+                <p style={{ marginTop: "var(--space-2)", fontSize: "var(--text-sm)", opacity: 0.8 }}>
+                  💡 1000 créditos = R$ 10,00 (proporcional ao uso de IA)
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -116,24 +122,24 @@ export default function PaymentsPage() {
             </CardContent>
           </Card>
 
-          {/* Info for Creators */}
+          {/* Bank Setup for Creators */}
           {user?.role === "creator" && (
+            <CreatorBankSetup />
+          )}
+
+          {/* Info for Students */}
+          {user?.role === "student" && (
             <Card variant="elevated">
               <CardHeader>
-                <CardTitle>👨‍🏫 Informações para Criadores</CardTitle>
+                <CardTitle>📚 Como Funciona</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className={styles.creatorInfo}>
-                  <p>
-                    Como criador, você precisa de créditos para:
-                  </p>
-                  <ul>
-                    <li><strong>Upload de vídeos:</strong> 1 crédito por minuto de vídeo</li>
-                    <li><strong>Gerar quizzes automáticos:</strong> 5 créditos por quiz</li>
-                  </ul>
+                  <p><strong>Cursos:</strong> Comprados com cartão de crédito ou boleto</p>
+                  <p><strong>Créditos:</strong> Usados apenas para perguntas ao mentor IA</p>
                   <p className={styles.note}>
-                    💡 <strong>Dica:</strong> O custo é calculado automaticamente com base na duração do vídeo.
-                    Vídeos mais longos custam mais créditos.
+                    💡 <strong>Dica:</strong> Use o mentor IA para tirar dúvidas sobre as aulas!
+                    Cada pergunta custa aproximadamente 10 créditos.
                   </p>
                 </div>
               </CardContent>

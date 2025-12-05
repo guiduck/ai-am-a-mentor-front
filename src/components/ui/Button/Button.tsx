@@ -3,7 +3,7 @@ import Link from "next/link";
 import styles from "./Button.module.css";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger" | "dark";
   size?: "small" | "medium" | "large";
   fullWidth?: boolean;
   loading?: boolean;
@@ -12,7 +12,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 interface ButtonLinkProps {
   href: string;
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger" | "dark";
   size?: "small" | "medium" | "large";
   fullWidth?: boolean;
   children: React.ReactNode;

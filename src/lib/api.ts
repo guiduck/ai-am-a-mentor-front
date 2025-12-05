@@ -14,38 +14,70 @@ export interface APIResponse<T> {
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
-// Helper function to get token from cookie or Zustand store
+/**
+ * Get auth token from cookie or Zustand store
+ */
 function getAuthToken(): string | null {
-  // Only works in browser (client-side)
-  if (typeof document === "undefined") {
-    return null;
-  }
+  if (typeof document === "undefined") return null;
 
-  // Try to get token from cookie first
+  // Try cookie first
   const cookies = document.cookie.split(";");
   const accessTokenCookie = cookies.find((cookie) =>
     cookie.trim().startsWith("access_token=")
   );
 
   if (accessTokenCookie) {
-    // Extract token value (handles URL encoding)
     const tokenValue = accessTokenCookie.split("=").slice(1).join("=").trim();
     return decodeURIComponent(tokenValue);
   }
 
-  // Fallback: try to get from Zustand store
+  // Fallback to Zustand store
   try {
-    // Dynamic import to avoid SSR issues
     const { useAuthStore } = require("@/stores/authStore");
-    const token = useAuthStore.getState().token;
-    if (token) return token;
-  } catch (e) {
-    // Zustand store not available or error, continue
+    return useAuthStore.getState().token || null;
+  } catch {
+    return null;
   }
-
-  return null;
 }
 
+/**
+ * Clear all auth data and redirect to login
+ */
+function handleAuthExpired(): void {
+  if (typeof window === "undefined") return;
+
+  // Clear cookies
+  document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  document.cookie = "user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  document.cookie = "user_data=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+  // Clear Zustand store
+  try {
+    const { useAuthStore } = require("@/stores/authStore");
+    useAuthStore.getState().clearAuth();
+  } catch {
+    // Store not available
+  }
+
+  // Redirect to login
+  window.location.href = "/login";
+}
+
+/**
+ * Build API URL from base URL and path
+ */
+function buildApiUrl(url: string): string {
+  const baseUrl = BASE_URL.replace(/\/$/, "");
+
+  if (url.startsWith("/")) return `${baseUrl}${url}`;
+  if (url.startsWith("api/")) return `${baseUrl}/${url}`;
+  if (baseUrl.endsWith("/api")) return `${baseUrl}/${url}`;
+  return `${baseUrl}/api/${url}`;
+}
+
+/**
+ * Main API function for making authenticated requests
+ */
 export default async function API<T = any>(
   url: string,
   options: {
@@ -53,59 +85,42 @@ export default async function API<T = any>(
     headers?: Record<string, string>;
     data?: any;
     next?: NextFetchRequestConfig;
+    skipAuthRedirect?: boolean; // Skip auto-redirect on 401
   } = {}
 ): Promise<APIResponse<T>> {
-  const { method = "GET", headers = {}, data, next } = options;
-  
-  // Build full URL: remove trailing slash from BASE_URL
-  const baseUrl = BASE_URL.replace(/\/$/, "");
-  
-  // Determine if we need to add /api prefix
-  // If BASE_URL already ends with /api, don't add it again
-  // If URL already starts with /api, don't add it again
-  // If URL starts with /, treat as absolute path and use as-is
-  let apiUrl: string;
-  
-  if (url.startsWith("/")) {
-    // Absolute path - use as-is
-    apiUrl = url;
-  } else if (url.startsWith("api/")) {
-    // Already has api/ prefix
-    apiUrl = `/${url}`;
-  } else if (baseUrl.endsWith("/api")) {
-    // BASE_URL already has /api, just add the path
-    apiUrl = `/${url}`;
-  } else {
-    // Need to add /api prefix
-    apiUrl = `/api/${url}`;
-  }
-  
-  const fullUrl = `${baseUrl}${apiUrl}`;
+  const { method = "GET", headers = {}, data, next, skipAuthRedirect = false } = options;
 
-  // Get auth token and add to headers if available
+  const fullUrl = buildApiUrl(url);
   const token = getAuthToken();
-
   const isFormData = data instanceof FormData;
   const hasBody = method !== "GET" && data;
 
-  // Build headers object
-  // Only add Content-Type if there's a body and it's not FormData
   const requestHeaders: Record<string, string> = {
     ...(hasBody && !isFormData ? { "Content-Type": "application/json" } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...headers, // Allow headers to override auth headers if needed
+    ...headers,
   };
 
   try {
     const response = await fetch(fullUrl, {
       method,
       next,
-      credentials: "include", // This ensures cookies are sent with requests
+      credentials: "include",
       headers: requestHeaders,
-      ...(method !== "GET" && data
-        ? { body: isFormData ? data : JSON.stringify(data) }
-        : {}),
+      ...(hasBody ? { body: isFormData ? data : JSON.stringify(data) } : {}),
     });
+
+    // Handle 401 Unauthorized - token expired or invalid
+    if (response.status === 401 && !skipAuthRedirect) {
+      handleAuthExpired();
+      return {
+        status: 401,
+        data: null,
+        error: true,
+        errorUserMessage: "Sessão expirada. Faça login novamente.",
+        headers: null,
+      };
+    }
 
     const responseData = await response.json();
 
@@ -114,7 +129,7 @@ export default async function API<T = any>(
         status: response.status,
         data: null,
         error: true,
-        errorUserMessage: responseData?.message || "Erro desconhecido.",
+        errorUserMessage: responseData?.message || responseData?.error || "Erro desconhecido.",
         debug: responseData,
       };
     }
@@ -131,7 +146,7 @@ export default async function API<T = any>(
       status: error.status ?? 500,
       data: null,
       error: true,
-      errorUserMessage: "Erro no servidor.",
+      errorUserMessage: "Erro de conexão com o servidor.",
       headers: null,
       debug: error,
     };

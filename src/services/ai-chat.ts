@@ -2,8 +2,9 @@ import API from "@/lib/api";
 
 export interface TranscribeResponse {
   message: string;
-  transcript: string;
+  transcript?: string;
   videoId: string;
+  status?: "processing" | "completed" | "error";
 }
 
 export interface TranscriptResponse {

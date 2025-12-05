@@ -233,7 +233,9 @@ export default function CourseDetailPage() {
                         <h3>{video.title}</h3>
                         <p>
                           Publicado em{" "}
-                          {new Date(video.createdAt).toLocaleDateString("pt-BR")}
+                          {new Date(video.createdAt).toLocaleDateString(
+                            "pt-BR"
+                          )}
                         </p>
                       </div>
                     </div>

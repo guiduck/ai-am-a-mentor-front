@@ -1,0 +1,170 @@
+.setupSection {
+  text-align: center;
+  padding: 24px 0;
+}
+
+.setupSection h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+  color: var(--text-primary);
+}
+
+.icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.iconWarning {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.description {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+  text-align: left;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.benefit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+}
+
+.benefit span {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.statusItems {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+  text-align: left;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.statusItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.statusItem.complete {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--color-success);
+}
+
+.statusItem.pending {
+  background: rgba(234, 179, 8, 0.1);
+  color: #b45309;
+}
+
+/* Complete section */
+.completeSection {
+  padding: 16px 0;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--color-success);
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 24px;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  background: var(--color-success);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.balanceCards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.balanceCard {
+  padding: 20px;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.balanceLabel {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.balanceValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.info {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.feeInfo {
+  padding: 12px 16px;
+  background: var(--color-gray-100);
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 20px;
+  color: var(--text-secondary);
+}
+
+.feeInfo strong {
+  color: var(--text-primary);
+}
+
+@media (max-width: 480px) {
+  .balanceCards {
+    grid-template-columns: 1fr;
+  }
+}
+
