@@ -10,6 +10,7 @@ interface VideoPlayerProps {
   onLoadStart?: () => void;
   onLoadedData?: () => void;
   onError?: (error: string) => void;
+  onEnded?: () => void;
   className?: string;
 }
 
@@ -19,6 +20,7 @@ export default function VideoPlayer({
   onLoadStart,
   onLoadedData,
   onError,
+  onEnded,
   className,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -51,6 +53,10 @@ export default function VideoPlayer({
 
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
+    const handleEnded = () => {
+      setIsPlaying(false);
+      onEnded?.();
+    };
 
     // Add a timeout to catch videos that never load
     // Increased timeout for large videos and streaming
@@ -66,6 +72,7 @@ export default function VideoPlayer({
     video.addEventListener("error", handleError);
     video.addEventListener("play", handlePlay);
     video.addEventListener("pause", handlePause);
+    video.addEventListener("ended", handleEnded);
 
     return () => {
       clearTimeout(loadTimeout);
@@ -74,8 +81,9 @@ export default function VideoPlayer({
       video.removeEventListener("error", handleError);
       video.removeEventListener("play", handlePlay);
       video.removeEventListener("pause", handlePause);
+      video.removeEventListener("ended", handleEnded);
     };
-  }, [src, onLoadStart, onLoadedData, onError, isLoading]);
+  }, [src, onLoadStart, onLoadedData, onError, onEnded, isLoading]);
 
   const handlePlayPause = () => {
     const video = videoRef.current;

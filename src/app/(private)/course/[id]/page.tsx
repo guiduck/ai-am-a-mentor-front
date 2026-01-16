@@ -6,7 +6,6 @@ import { useAuthStore } from "@/stores/authStore";
 import {
   getCourseById,
   Course,
-  enrollInCourse,
   checkEnrollmentStatus,
   EnrollmentStatus,
 } from "@/services/courses";
@@ -14,6 +13,7 @@ import { getCourseVideos, Video } from "@/services/videos";
 import { Button } from "@/components/ui/Button/Button";
 import { toast } from "sonner";
 import { FullPageLoading } from "@/components/ui/Loading/Loading";
+import CoursePurchase from "@/components/payments/CoursePurchase";
 import styles from "./page.module.css";
 
 export default function CourseDetailPage() {
@@ -26,7 +26,7 @@ export default function CourseDetailPage() {
   const [enrollmentStatus, setEnrollmentStatus] =
     useState<EnrollmentStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [enrolling, setEnrolling] = useState(false);
+  const [showPurchase, setShowPurchase] = useState(false);
 
   useEffect(() => {
     if (courseId && user) {
@@ -71,21 +71,19 @@ export default function CourseDetailPage() {
     }
   };
 
-  const handleEnroll = async () => {
+  const handleStartPurchase = () => {
     if (!user || user.role !== "student") return;
+    setShowPurchase(true);
+  };
 
-    try {
-      setEnrolling(true);
-      await enrollInCourse(courseId);
-      toast.success("Inscrição realizada com sucesso!");
+  const handlePurchaseComplete = async () => {
+    toast.success("Pagamento confirmado! Acesso liberado.");
+    setShowPurchase(false);
+    await loadCourseData();
+  };
 
-      // Reload course data to show videos
-      await loadCourseData();
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao se inscrever no curso");
-    } finally {
-      setEnrolling(false);
-    }
+  const handlePurchaseCancel = () => {
+    setShowPurchase(false);
   };
 
   const handleAddVideo = () => {
@@ -115,6 +113,8 @@ export default function CourseDetailPage() {
   const isCreator = user?.role === "creator" && course.creatorId === user.id;
   const isStudent = user?.role === "student";
   const isEnrolled = enrollmentStatus?.isEnrolled || false;
+  const coursePriceValue = Number.parseFloat(course.price);
+  const coursePrice = Number.isFinite(coursePriceValue) ? coursePriceValue : 0;
 
   // Calculate total duration from videos (in seconds)
   const totalDuration = videos.reduce(
@@ -157,12 +157,11 @@ export default function CourseDetailPage() {
               )}
               {isStudent && !isEnrolled && (
                 <Button
-                  onClick={handleEnroll}
+                  onClick={handleStartPurchase}
                   variant="primary"
                   size="large"
-                  loading={enrolling}
                 >
-                  {enrolling ? "Inscrevendo..." : "Se inscrever"}
+                  Comprar curso
                 </Button>
               )}
               {(isStudent && isEnrolled) || isCreator ? (
@@ -194,13 +193,25 @@ export default function CourseDetailPage() {
         </section>
 
         {isStudent && !isEnrolled && (
-          <div className={styles.enrollmentBanner}>
-            <h3>Desbloqueie o conteúdo completo</h3>
-            <p>
-              Inscreva-se para assistir às aulas, acompanhar projetos guiados e
-              receber feedback da mentoria inteligente.
-            </p>
-          </div>
+          <>
+            <div className={styles.enrollmentBanner}>
+              <h3>Desbloqueie o conteúdo completo</h3>
+              <p>
+                Inscreva-se para assistir às aulas, acompanhar projetos guiados
+                e receber feedback da mentoria inteligente.
+              </p>
+            </div>
+            {showPurchase && (
+              <div className={styles.purchaseCard}>
+                <CoursePurchase
+                  courseId={courseId}
+                  price={coursePrice}
+                  onPurchaseComplete={handlePurchaseComplete}
+                  onCancel={handlePurchaseCancel}
+                />
+              </div>
+            )}
+          </>
         )}
 
         {(isCreator || (isStudent && isEnrolled)) && (

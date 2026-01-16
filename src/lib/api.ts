@@ -7,12 +7,16 @@ export interface APIResponse<T> {
   data: T | null;
   error: boolean;
   errorUserMessage: string;
+  errorCode?: string;
+  traceId?: string;
+  details?: any;
   debug?: any;
   status: number;
   headers?: Headers | null;
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
+const DEBUG_API = process.env.NEXT_PUBLIC_API_DEBUG === "true";
 
 /**
  * Get auth token from cookie or Zustand store
@@ -47,7 +51,8 @@ function handleAuthExpired(): void {
   if (typeof window === "undefined") return;
 
   // Clear cookies
-  document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  document.cookie =
+    "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
   document.cookie = "user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
   document.cookie = "user_data=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 
@@ -68,6 +73,9 @@ function handleAuthExpired(): void {
  */
 function buildApiUrl(url: string): string {
   const baseUrl = BASE_URL.replace(/\/$/, "");
+  if (DEBUG_API) {
+    console.log("[buildApiUrl] baseUrl", baseUrl);
+  }
 
   if (url.startsWith("/")) return `${baseUrl}${url}`;
   if (url.startsWith("api/")) return `${baseUrl}/${url}`;
@@ -88,7 +96,13 @@ export default async function API<T = any>(
     skipAuthRedirect?: boolean; // Skip auto-redirect on 401
   } = {}
 ): Promise<APIResponse<T>> {
-  const { method = "GET", headers = {}, data, next, skipAuthRedirect = false } = options;
+  const {
+    method = "GET",
+    headers = {},
+    data,
+    next,
+    skipAuthRedirect = false,
+  } = options;
 
   const fullUrl = buildApiUrl(url);
   const token = getAuthToken();
@@ -122,14 +136,31 @@ export default async function API<T = any>(
       };
     }
 
-    const responseData = await response.json();
+    // Some endpoints may return empty bodies or non-JSON payloads on errors.
+    // Prefer JSON when possible, otherwise fallback to text.
+    let responseData: any = null;
+    const contentType = response.headers.get("content-type") || "";
+    try {
+      if (contentType.includes("application/json")) {
+        responseData = await response.json();
+      } else {
+        const text = await response.text();
+        responseData = text ? { message: text } : null;
+      }
+    } catch {
+      responseData = null;
+    }
 
     if (!response.ok) {
       return {
         status: response.status,
         data: null,
         error: true,
-        errorUserMessage: responseData?.message || responseData?.error || "Erro desconhecido.",
+        errorUserMessage:
+          responseData?.message || responseData?.error || "Erro desconhecido.",
+        errorCode: responseData?.code,
+        traceId: responseData?.traceId,
+        details: responseData?.details,
         debug: responseData,
       };
     }
@@ -147,6 +178,8 @@ export default async function API<T = any>(
       data: null,
       error: true,
       errorUserMessage: "Erro de conexão com o servidor.",
+      errorCode: error.code,
+      traceId: error.traceId,
       headers: null,
       debug: error,
     };

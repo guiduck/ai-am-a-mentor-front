@@ -30,6 +30,9 @@ export interface PaymentIntent {
   creditsAmount?: number;
   courseId?: string;
   paymentMethod?: PaymentMethod;
+  platformFee?: number;
+  creatorAmount?: number;
+  payoutStatus?: "split" | "pending_onboarding";
   // Boleto specific data
   boletoUrl?: string;
   boletoNumber?: string;
@@ -86,12 +89,11 @@ export async function createCreditsPaymentIntent(
  */
 export async function createCoursePaymentIntent(
   courseId: string,
-  amount: number,
   paymentMethod: PaymentMethod = "card"
 ): Promise<PaymentIntent | null> {
   const response = await API<PaymentIntent>("payments/course/create-intent", {
     method: "POST",
-    data: { courseId, amount, paymentMethod },
+    data: { courseId, paymentMethod },
   });
   if (response.error || !response.data) {
     console.error("Error creating course payment intent:", response.errorUserMessage);

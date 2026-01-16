@@ -7,14 +7,17 @@
 .innerContainer {
   max-width: 1200px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
 }
 
 .header {
-  margin-bottom: var(--space-6);
+  text-align: center;
 }
 
 .header h1 {
-  font-size: var(--text-2xl);
+  font-size: var(--text-3xl);
   font-weight: var(--font-bold);
   color: var(--text-primary);
   margin: 0 0 var(--space-2) 0;
@@ -26,200 +29,282 @@
   margin: 0;
 }
 
-.content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-}
-
-.placeholder {
-  color: var(--text-secondary);
-  font-style: italic;
-  margin-bottom: var(--space-4);
-}
-
-.info {
-  color: var(--text-primary);
-  font-weight: var(--font-medium);
+/* Current Plan Card */
+.currentPlanCard {
   margin-bottom: var(--space-2);
 }
 
-.featuresList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.currentPlan {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.planInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.planBadge {
+  display: inline-block;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-primary);
+  color: var(--color-gray-900);
+  font-weight: var(--font-bold);
+  border-radius: 6px;
+  font-size: var(--text-sm);
+}
+
+.planPrice {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.periodInfo {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.noPlan {
+  text-align: center;
+  padding: var(--space-4) 0;
+  color: var(--text-secondary);
+}
+
+.noPlan p {
+  margin: var(--space-2) 0;
+}
+
+/* Usage Card */
+.usageCard {
+  margin-bottom: var(--space-2);
+}
+
+.usageGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.usageItem {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
-.featuresList li {
-  padding-left: var(--space-4);
-  position: relative;
+.usageLabel {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-medium);
+}
+
+.usageValue {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.usageCurrent {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+}
+
+.usageLimit {
+  font-size: var(--text-base);
   color: var(--text-secondary);
 }
 
-.featuresList li::before {
-  content: "✓";
-  position: absolute;
-  left: 0;
-  color: var(--color-primary);
-  font-weight: var(--font-bold);
+.usageBar {
+  height: 8px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  overflow: hidden;
 }
 
-/* Balance Card */
-.balanceCard {
+.usageProgress {
+  height: 100%;
   background: var(--color-primary);
-  border: 2px solid var(--color-gray-900);
-  color: var(--color-gray-900);
+  transition: width 0.3s ease;
 }
 
-.balance {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: var(--space-6) 0;
-  margin-bottom: var(--space-6);
+.periodNote {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  text-align: center;
+  margin: 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-color);
 }
 
-.balanceAmount {
-  font-size: 64px;
+/* Plans Section */
+.plansSection h2 {
+  font-size: var(--text-2xl);
   font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-4) 0;
+  text-align: center;
+}
+
+.plansGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.planCard {
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.planCard:hover {
+  transform: translateY(-4px);
+}
+
+.currentPlanHighlight {
+  border: 2px solid var(--color-primary);
+}
+
+.currentBadge {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  background: var(--color-primary);
+  color: var(--color-gray-900);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  padding: var(--space-1) var(--space-2);
+  border-radius: 4px;
+}
+
+.planName {
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-4) 0;
+}
+
+.planPriceDisplay {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  min-height: 60px;
+}
+
+.freeLabel {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  color: var(--color-primary);
+}
+
+.currency {
+  font-size: var(--text-lg);
+  color: var(--text-secondary);
+  font-weight: var(--font-semibold);
+}
+
+.amount {
+  font-size: var(--text-4xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
   line-height: 1;
 }
 
-.balanceLabel {
+.period {
   font-size: var(--text-base);
-  opacity: 0.8;
-  margin-top: var(--space-2);
+  color: var(--text-secondary);
 }
 
-.balanceInfo {
-  padding: var(--space-4);
-  background: rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-}
-
-.balanceInfo p {
-  margin: 0 0 var(--space-2) 0;
-  font-weight: var(--font-semibold);
-}
-
-.balanceInfo ul {
-  margin: 0;
-  padding-left: 20px;
-}
-
-.balanceInfo li {
-  margin-bottom: 4px;
-  opacity: 0.85;
-}
-
-/* Transactions */
-.transactions {
+.featuresList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-6) 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
+  min-height: 180px;
 }
 
-.transaction {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-4);
-  background: var(--bg-secondary);
-  border-radius: 8px;
-  transition: background 0.2s ease;
-}
-
-.transaction:hover {
-  background: var(--bg-hover, #f5f5f5);
-}
-
-.transactionInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-}
-
-.transactionType {
-  font-weight: var(--font-semibold);
-  font-size: var(--text-sm);
-}
-
-.transactionDescription {
+.featuresList li {
   color: var(--text-secondary);
   font-size: var(--text-sm);
 }
 
-.transactionDate {
-  color: var(--text-tertiary, #999);
-  font-size: var(--text-xs);
+/* Info Card */
+.infoCard {
+  margin-top: var(--space-4);
 }
 
-.transactionAmount {
-  font-size: var(--text-lg);
+.infoCard h3 {
+  font-size: var(--text-xl);
   font-weight: var(--font-bold);
-  white-space: nowrap;
-  margin-left: var(--space-4);
-}
-
-.transactionAmount.positive {
-  color: var(--color-success, #28a745);
-}
-
-.transactionAmount.negative {
-  color: var(--color-error, #dc3545);
-}
-
-.emptyState {
-  text-align: center;
-  padding: var(--space-12) var(--space-6);
-  color: var(--text-secondary);
-}
-
-/* Creator Info */
-.creatorInfo {
-  font-size: var(--text-sm);
-}
-
-.creatorInfo p {
-  margin: 0 0 var(--space-3) 0;
-}
-
-.creatorInfo ul {
+  color: var(--text-primary);
   margin: 0 0 var(--space-4) 0;
-  padding-left: 20px;
 }
 
-.creatorInfo li {
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-4);
+}
+
+.infoItem strong {
+  display: block;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
   margin-bottom: var(--space-2);
-  color: var(--text-secondary);
 }
 
-.note {
-  padding: var(--space-3);
-  background: #e7f3ff;
-  border-left: 4px solid #0066cc;
-  border-radius: 4px;
-  margin: var(--space-4) 0 0 0 !important;
+.infoItem p {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
 }
 
 @media (max-width: 768px) {
-  .balanceAmount {
-    font-size: 48px;
+  .container {
+    padding: var(--space-3);
   }
 
-  .transaction {
+  .header h1 {
+    font-size: var(--text-2xl);
+  }
+
+  .currentPlan {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .planInfo {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-2);
   }
 
-  .transactionAmount {
-    margin-left: 0;
+  .usageGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .plansGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .amount {
+    font-size: var(--text-3xl);
   }
 }
-
-

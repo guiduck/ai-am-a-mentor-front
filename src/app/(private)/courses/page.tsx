@@ -92,7 +92,9 @@ export default function CoursesPage() {
       }
       // Fallback: search in title and description
       const needle = selectedCategory.toLowerCase();
-      return `${course.title} ${course.description}`.toLowerCase().includes(needle);
+      return `${course.title} ${course.description}`
+        .toLowerCase()
+        .includes(needle);
     });
   }, [courses, selectedCategory]);
 
@@ -133,17 +135,29 @@ export default function CoursesPage() {
           </p>
           <div className={styles.heroActions}>
             {isCreator && (
-              <Button variant="primary" size="large" onClick={() => router.push("/courses/create")}>
+              <Button
+                variant="primary"
+                size="large"
+                onClick={() => router.push("/courses/create")}
+              >
                 Criar novo curso
               </Button>
             )}
             {isStudent && (
-              <Button variant="outline" size="large" onClick={() => router.push("/dashboard/student")}>
+              <Button
+                variant="outline"
+                size="large"
+                onClick={() => router.push("/dashboard/student")}
+              >
                 Continuar aprendendo
               </Button>
             )}
             {!isCreator && !isStudent && (
-              <Button variant="outline" size="large" onClick={() => router.push("/dashboard")}>
+              <Button
+                variant="outline"
+                size="large"
+                onClick={() => router.push("/dashboard")}
+              >
                 Ver dashboard
               </Button>
             )}

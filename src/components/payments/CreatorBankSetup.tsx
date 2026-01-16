@@ -12,13 +12,21 @@ import {
   ConnectAccountStatus,
   ConnectBalance,
 } from "@/services/stripe-connect";
+import {
+  getCreatorTermsStatus,
+  acceptCreatorTerms,
+  CreatorTermsStatus,
+} from "@/services/creator-terms";
 import styles from "./CreatorBankSetup.module.css";
 
 export default function CreatorBankSetup() {
   const [status, setStatus] = useState<ConnectAccountStatus | null>(null);
   const [balance, setBalance] = useState<ConnectBalance | null>(null);
+  const [termsStatus, setTermsStatus] = useState<CreatorTermsStatus | null>(null);
+  const [termsChecked, setTermsChecked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [termsActionLoading, setTermsActionLoading] = useState(false);
 
   useEffect(() => {
     loadStatus();
@@ -26,8 +34,13 @@ export default function CreatorBankSetup() {
 
   const loadStatus = async () => {
     setIsLoading(true);
-    const statusResult = await getConnectStatus();
+    const [statusResult, termsResult] = await Promise.all([
+      getConnectStatus(),
+      getCreatorTermsStatus(),
+    ]);
+
     setStatus(statusResult);
+    setTermsStatus(termsResult);
 
     if (statusResult.isComplete) {
       const balanceResult = await getCreatorBalance();
@@ -78,6 +91,30 @@ export default function CreatorBankSetup() {
     setActionLoading(false);
   };
 
+  /**
+   * Accept creator terms and refresh status.
+   */
+  const handleAcceptTerms = async () => {
+    if (!termsStatus?.version) {
+      return;
+    }
+
+    setTermsActionLoading(true);
+    const result = await acceptCreatorTerms(termsStatus.version);
+
+    if ("error" in result) {
+      alert(result.error);
+    } else {
+      setTermsChecked(false);
+      await loadStatus();
+    }
+    setTermsActionLoading(false);
+  };
+
+  const acceptedAtLabel = termsStatus?.acceptedAt
+    ? new Date(termsStatus.acceptedAt).toLocaleString("pt-BR")
+    : "";
+
   if (isLoading) {
     return (
       <Card variant="elevated">
@@ -97,6 +134,44 @@ export default function CreatorBankSetup() {
         <CardTitle>🏦 Recebimento de Pagamentos</CardTitle>
       </CardHeader>
       <CardContent>
+        {termsStatus && (
+          <div className={styles.termsSection}>
+            <h3 className={styles.termsTitle}>{termsStatus.title}</h3>
+            <p className={styles.description}>
+              Para vender cursos, é necessário aceitar os termos abaixo.
+            </p>
+            <ul className={styles.termsList}>
+              {termsStatus.items.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+
+            {termsStatus.accepted ? (
+              <div className={styles.termsAccepted}>
+                ✓ Termos aceitos {acceptedAtLabel ? `em ${acceptedAtLabel}` : ""}
+              </div>
+            ) : (
+              <div className={styles.termsActions}>
+                <label className={styles.termsCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={termsChecked}
+                    onChange={(event) => setTermsChecked(event.target.checked)}
+                  />
+                  Li e aceito os termos acima
+                </label>
+                <Button
+                  onClick={handleAcceptTerms}
+                  loading={termsActionLoading}
+                  disabled={!termsChecked || termsActionLoading}
+                >
+                  Aceitar termos
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
         {!status?.hasAccount ? (
           // No account yet
           <div className={styles.setupSection}>
@@ -109,10 +184,10 @@ export default function CreatorBankSetup() {
             </p>
             <div className={styles.benefits}>
               <div className={styles.benefit}>
-                <span>✓</span> Receba 90% do valor de cada venda
+                <span>✓</span> Taxa conforme o seu plano (5% a 0%)
               </div>
               <div className={styles.benefit}>
-                <span>✓</span> Transferências automáticas para sua conta
+                <span>✓</span> Repasses automáticos após cadastro completo
               </div>
               <div className={styles.benefit}>
                 <span>✓</span> Dashboard completo de vendas
@@ -182,7 +257,7 @@ export default function CreatorBankSetup() {
             </p>
 
             <div className={styles.feeInfo}>
-              <strong>Taxa da plataforma:</strong> 10% por venda
+              <strong>Taxa da plataforma:</strong> conforme seu plano (5% a 0%)
             </div>
 
             <Button
@@ -198,4 +273,3 @@ export default function CreatorBankSetup() {
     </Card>
   );
 }
-

@@ -160,6 +160,10 @@
   opacity: 0.9;
 }
 
+.purchaseCard {
+  margin-top: var(--space-5);
+}
+
 .syllabus {
   background: var(--bg-secondary);
   border-radius: var(--radius-2xl);

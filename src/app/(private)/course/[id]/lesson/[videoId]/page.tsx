@@ -52,6 +52,7 @@ export default function LessonPage() {
   const [loading, setLoading] = useState(true);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
   const [loadingStream, setLoadingStream] = useState(false);
+  const [streamMessage, setStreamMessage] = useState<string | null>(null);
 
   // AI Chat state
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -79,6 +80,8 @@ export default function LessonPage() {
   // Quiz state
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [showQuizModal, setShowQuizModal] = useState(false);
+  const [isQuizMandatory, setIsQuizMandatory] = useState(false);
+  const [hasAnsweredQuiz, setHasAnsweredQuiz] = useState(false);
 
   useEffect(() => {
     if (courseId && videoId && user) {
@@ -111,23 +114,12 @@ export default function LessonPage() {
       setVideo(videoData);
       setCourse(courseData);
 
-      // Load streaming URL for the video
-      setLoadingStream(true);
-      const streamData = await getVideoStreamUrl(videoId);
-      if (streamData) {
-        console.log("Stream URL received:", streamData.streamUrl);
-        setStreamUrl(streamData.streamUrl);
-      } else {
-        console.error("Failed to get stream URL for video:", videoId);
-        toast.error(
-          "Não foi possível carregar o vídeo. Verifique se o vídeo foi enviado."
-        );
-      }
-      setLoadingStream(false);
+      // Load streaming URL for the video (may take a bit right after upload)
+      await loadStreamUrlWithRetry(videoId);
 
       // Check if transcript exists
       const transcriptExists = await checkTranscript();
-      
+
       // Auto-transcribe if no transcript exists (only for creators)
       if (!transcriptExists && user?.role === "creator") {
         // Auto-start transcription in background (silent)
@@ -145,10 +137,55 @@ export default function LessonPage() {
     }
   };
 
+  const loadStreamUrlWithRetry = async (videoId: string) => {
+    setLoadingStream(true);
+    setStreamMessage(null);
+    setStreamUrl(null);
+
+    const maxAttempts = 12; // ~1 min (5s interval)
+    const intervalMs = 5000;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const streamResult = await getVideoStreamUrl(videoId);
+
+      if (streamResult.ok) {
+        console.log("Stream URL received:", streamResult.streamUrl);
+        setStreamUrl(streamResult.streamUrl);
+        setStreamMessage(null);
+        setLoadingStream(false);
+        return;
+      }
+
+      // 202: still processing/uploading
+      if (streamResult.status === 202) {
+        setStreamMessage(
+          streamResult.message ||
+            "O vídeo ainda está sendo processado. Aguarde um pouco..."
+        );
+      } else {
+        // For other errors, avoid spamming toasts; show a softer message and allow retry via refresh.
+        setStreamMessage(streamResult.message);
+      }
+
+      if (attempt < maxAttempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, intervalMs));
+      }
+    }
+
+    setLoadingStream(false);
+    toast.error(
+      "O vídeo ainda não está disponível. Aguarde alguns minutos e recarregue a página."
+    );
+  };
+
   const loadQuiz = async () => {
     try {
       const quizData = await getQuizByVideoId(videoId);
       setQuiz(quizData);
+      // For students, if there is any attempt, consider it answered (no need to force again)
+      if (user?.role === "student") {
+        setHasAnsweredQuiz(!!quizData?.bestAttempt);
+      }
     } catch (error) {
       console.error("Error loading quiz:", error);
     }
@@ -162,6 +199,9 @@ export default function LessonPage() {
     if (passed) {
       toast.success("Parabéns! Você passou no quiz!");
     }
+    // For mandatory flow, submission is what matters (pass/fail). Mark as answered.
+    setHasAnsweredQuiz(true);
+    setIsQuizMandatory(false);
     loadQuiz(); // Refresh quiz data
   };
 
@@ -202,7 +242,8 @@ export default function LessonPage() {
 
   const checkTranscript = async (): Promise<boolean> => {
     try {
-      const transcript = await getVideoTranscript(videoId);
+      // It's normal to not have a transcript right after upload; avoid noisy logs.
+      const transcript = await getVideoTranscript(videoId, true);
       if (transcript) {
         setHasTranscript(true);
         return true;
@@ -362,15 +403,35 @@ export default function LessonPage() {
                   title={video.title}
                   onLoadStart={() => console.log("Video loading started")}
                   onLoadedData={() => console.log("Video loaded")}
+                  onEnded={() => {
+                    if (user?.role !== "student") return;
+                    if (!quiz) return;
+                    if (hasAnsweredQuiz) return;
+
+                    setIsQuizMandatory(true);
+                    setShowQuizModal(true);
+                    toast.info(
+                      "Aula finalizada! Para concluir, responda o quiz desta aula."
+                    );
+                  }}
                   onError={(error) => {
                     console.error("Video player error:", error);
-                    toast.error("Erro ao reproduzir vídeo");
+                    toast.error(
+                      streamMessage ||
+                        "Erro ao reproduzir vídeo. Tente novamente em instantes."
+                    );
                   }}
                 />
 
                 {loadingStream && (
                   <div className={styles.streamLoading}>
                     <Loading text="Carregando vídeo..." size="small" />
+                  </div>
+                )}
+
+                {!loadingStream && !streamUrl && streamMessage && (
+                  <div className={styles.streamLoading}>
+                    <Loading text={streamMessage} size="small" />
                   </div>
                 )}
 
@@ -400,6 +461,7 @@ export default function LessonPage() {
                       videoTitle={video.title}
                       hasTranscript={hasTranscript}
                       onQuizGenerated={handleQuizGenerated}
+                      onTestQuiz={() => setShowQuizModal(true)}
                     />
                   ) : quiz ? (
                     // Student view: Take quiz button
@@ -408,11 +470,17 @@ export default function LessonPage() {
                         <span className={styles.quizIcon}>📝</span>
                         <div>
                           <strong>{quiz.title}</strong>
-                          <p>{quiz.questionsCount} perguntas • Mínimo {quiz.passingScore}% para passar</p>
+                          <p>
+                            {quiz.questionsCount} perguntas • Mínimo{" "}
+                            {quiz.passingScore}% para passar
+                          </p>
                         </div>
                       </div>
                       <Button
-                        onClick={() => setShowQuizModal(true)}
+                        onClick={() => {
+                          setIsQuizMandatory(false);
+                          setShowQuizModal(true);
+                        }}
                         variant="primary"
                         size="small"
                       >
@@ -453,7 +521,9 @@ export default function LessonPage() {
                         size="small"
                         disabled={!newComment.trim() || submittingComment}
                       >
-                        {submittingComment ? "Enviando..." : "Enviar Comentário"}
+                        {submittingComment
+                          ? "Enviando..."
+                          : "Enviar Comentário"}
                       </Button>
                     </form>
 
@@ -485,7 +555,9 @@ export default function LessonPage() {
                                 )}
                               </span>
                             </div>
-                            <p className={styles.commentContent}>{comment.content}</p>
+                            <p className={styles.commentContent}>
+                              {comment.content}
+                            </p>
                           </div>
                         ))}
                       </div>
@@ -630,6 +702,7 @@ export default function LessonPage() {
           isOpen={showQuizModal}
           onClose={() => setShowQuizModal(false)}
           onComplete={handleQuizComplete}
+          isMandatory={isQuizMandatory}
         />
       </div>
     </div>

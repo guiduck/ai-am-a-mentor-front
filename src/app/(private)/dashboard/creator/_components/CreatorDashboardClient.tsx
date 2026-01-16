@@ -141,25 +141,25 @@ export default function CreatorDashboardClient({
           </div>
         </div>
 
-          <div className={styles.heroStats}>
-            <div>
-              <span>{courses.length}</span>
-              <p>Cursos publicados</p>
-            </div>
-            <div>
-              <span>
-                {new Intl.NumberFormat("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                }).format(totalRevenue)}
-              </span>
-              <p>Potencial de faturamento</p>
-            </div>
-            <div>
-              <span>{totalLessons} aulas</span>
-              <p>Conteúdos mentorados</p>
-            </div>
+        <div className={styles.heroStats}>
+          <div>
+            <span>{courses.length}</span>
+            <p>Cursos publicados</p>
           </div>
+          <div>
+            <span>
+              {new Intl.NumberFormat("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+              }).format(totalRevenue)}
+            </span>
+            <p>Potencial de faturamento</p>
+          </div>
+          <div>
+            <span>{totalLessons} aulas</span>
+            <p>Conteúdos mentorados</p>
+          </div>
+        </div>
       </div>
 
       <section className={styles.insightsGrid}>

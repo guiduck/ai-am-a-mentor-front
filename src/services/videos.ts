@@ -181,32 +181,70 @@ export async function generateUploadUrl(
 
 // Get streaming URL for a video
 // Uses proxy endpoint to avoid CORS issues with Cloudflare R2
-export async function getVideoStreamUrl(videoId: string): Promise<{
-  streamUrl: string;
-  video: { id: string; title: string; duration?: number };
-} | null> {
+export type VideoStreamResult =
+  | {
+      ok: true;
+      streamUrl: string;
+      video: { id: string; title: string; duration?: number };
+    }
+  | {
+      ok: false;
+      status: number;
+      message: string;
+      debug?: any;
+    };
+
+export async function getVideoStreamUrl(
+  videoId: string
+): Promise<VideoStreamResult> {
   try {
     // First get video metadata from /stream endpoint
     const response = await API<{
-      streamUrl: string;
-      video: { id: string; title: string; duration?: number };
+      streamUrl?: string;
+      video?: { id: string; title: string; duration?: number };
+      status?: "processing";
+      message?: string;
+      retryAfterSeconds?: number;
     }>(`videos/${videoId}/stream`, {
       method: "GET",
     });
 
     if (response.error || !response.data) {
-      console.error("Error getting stream URL:", {
-        error: response.error,
-        errorMessage: response.errorUserMessage,
+      return {
+        ok: false,
         status: response.status,
+        message:
+          response.errorUserMessage ||
+          "Não foi possível carregar o vídeo no momento.",
         debug: response.debug,
-      });
-      return null;
+      };
+    }
+
+    if (response.status === 202 || response.data.status === "processing") {
+      return {
+        ok: false,
+        status: 202,
+        message:
+          response.data.message ||
+          "O vídeo ainda está sendo processado. Tente novamente em instantes.",
+        debug: response.data,
+      };
     }
 
     // Use presigned URL directly from R2 (requires CORS configuration in Cloudflare R2)
     // This is simpler and more performant than proxying through our servers
     const streamUrl = response.data.streamUrl;
+    const video = response.data.video;
+
+    if (!streamUrl || !video) {
+      return {
+        ok: false,
+        status: response.status,
+        message:
+          "O vídeo ainda não está disponível. Tente novamente em instantes.",
+        debug: response.data,
+      };
+    }
 
     console.log(
       "Using direct R2 presigned URL for video streaming:",
@@ -215,12 +253,18 @@ export async function getVideoStreamUrl(videoId: string): Promise<{
 
     // Return presigned URL directly with video metadata
     return {
-      streamUrl: streamUrl,
-      video: response.data.video,
+      ok: true,
+      streamUrl,
+      video,
     };
   } catch (error) {
     console.error("Error getting stream URL:", error);
-    return null;
+    return {
+      ok: false,
+      status: 500,
+      message: "Erro ao carregar o vídeo. Tente novamente em instantes.",
+      debug: error,
+    };
   }
 }
 
@@ -306,9 +350,7 @@ export async function getVideoBlobUrl(videoId: string): Promise<string | null> {
 }
 
 // Get comments for a video
-export async function getVideoComments(
-  videoId: string
-): Promise<Comment[]> {
+export async function getVideoComments(videoId: string): Promise<Comment[]> {
   try {
     const response = await API<Comment[]>(`videos/${videoId}/comments`, {
       method: "GET",
@@ -339,9 +381,7 @@ export async function createComment(
     });
 
     if (response.error || !response.data) {
-      throw new Error(
-        response.errorUserMessage || "Erro ao criar comentário"
-      );
+      throw new Error(response.errorUserMessage || "Erro ao criar comentário");
     }
 
     return response.data;

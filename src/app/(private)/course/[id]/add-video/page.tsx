@@ -204,7 +204,7 @@ export default function AddVideoPage() {
       router.push(`/course/${courseId}`);
     } catch (error: any) {
       console.error("Error adding video:", error);
-      
+
       // Check if it's a CORS error
       if (
         error.message?.includes("CORS") ||
@@ -279,7 +279,8 @@ export default function AddVideoPage() {
                         <div className={styles.uploadIcon}>📁</div>
                         <p>Clique para selecionar um arquivo de vídeo</p>
                         <p className={styles.uploadHint}>
-                          Formatos suportados: MP4, MOV, AVI (sem limite de tamanho)
+                          Formatos suportados: MP4, MOV, AVI (sem limite de
+                          tamanho)
                         </p>
                       </div>
                     )}

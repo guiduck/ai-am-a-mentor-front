@@ -15,6 +15,7 @@ interface GenerateQuizButtonProps {
   videoTitle: string;
   hasTranscript: boolean;
   onQuizGenerated?: () => void;
+  onTestQuiz?: () => void;
 }
 
 export default function GenerateQuizButton({
@@ -22,6 +23,7 @@ export default function GenerateQuizButton({
   videoTitle,
   hasTranscript,
   onQuizGenerated,
+  onTestQuiz,
 }: GenerateQuizButtonProps) {
   const [hasQuiz, setHasQuiz] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,7 +51,9 @@ export default function GenerateQuizButton({
 
   const handleGenerateClick = () => {
     if (!hasTranscript) {
-      alert("O vídeo precisa ter uma transcrição para gerar o quiz. Aguarde a transcrição automática.");
+      alert(
+        "O vídeo precisa ter uma transcrição para gerar o quiz. Aguarde a transcrição automática."
+      );
       return;
     }
     setShowConfirm(true);
@@ -68,13 +72,19 @@ export default function GenerateQuizButton({
       return;
     }
 
-    alert(`Quiz gerado com sucesso! ${result.questionsCount} perguntas criadas. Custo: ${result.creditsUsed} créditos.`);
+    alert(
+      `Quiz gerado com sucesso! ${result.questionsCount} perguntas criadas. Custo: ${result.creditsUsed} créditos.`
+    );
     setHasQuiz(true);
     onQuizGenerated?.();
   };
 
   const handleDeleteQuiz = async () => {
-    if (!confirm("Tem certeza que deseja deletar o quiz? Esta ação não pode ser desfeita.")) {
+    if (
+      !confirm(
+        "Tem certeza que deseja deletar o quiz? Esta ação não pode ser desfeita."
+      )
+    ) {
       return;
     }
 
@@ -102,10 +112,18 @@ export default function GenerateQuizButton({
     <div className={styles.container}>
       {hasQuiz ? (
         <div className={styles.hasQuiz}>
-          <span className={styles.quizBadge}>
-            ✓ Quiz disponível
-          </span>
+          <span className={styles.quizBadge}>✓ Quiz disponível</span>
           <div className={styles.actions}>
+            {onTestQuiz && (
+              <Button
+                size="small"
+                variant="primary"
+                onClick={onTestQuiz}
+                disabled={isGenerating}
+              >
+                Testar quiz
+              </Button>
+            )}
             <Button
               size="small"
               variant="outline"
@@ -114,11 +132,7 @@ export default function GenerateQuizButton({
             >
               Regenerar
             </Button>
-            <Button
-              size="small"
-              variant="ghost"
-              onClick={handleDeleteQuiz}
-            >
+            <Button size="small" variant="ghost" onClick={handleDeleteQuiz}>
               Deletar
             </Button>
           </div>
@@ -136,11 +150,15 @@ export default function GenerateQuizButton({
 
       {/* Confirmation Modal */}
       {showConfirm && (
-        <div className={styles.modalOverlay} onClick={() => setShowConfirm(false)}>
+        <div
+          className={styles.modalOverlay}
+          onClick={() => setShowConfirm(false)}
+        >
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h3>Gerar Quiz com IA</h3>
             <p className={styles.modalDescription}>
-              O quiz será gerado automaticamente baseado na transcrição do vídeo.
+              O quiz será gerado automaticamente baseado na transcrição do
+              vídeo.
             </p>
 
             <div className={styles.formGroup}>

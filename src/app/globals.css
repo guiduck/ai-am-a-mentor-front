@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap");
+
 /* Design System - Inspired by Codecademy and Gumroad */
 
 /* === COLORS === */
@@ -53,7 +55,7 @@
 /* === TYPOGRAPHY === */
 :root {
   /* Font Families */
-  --font-primary: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+  --font-primary: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
     "Courier New", monospace;
@@ -161,7 +163,11 @@ body {
       rgba(0, 0, 0, 0.03) 1px,
       transparent 0
     ),
-    radial-gradient(circle at 10px 10px, rgba(0, 0, 0, 0.015) 1px, transparent 0);
+    radial-gradient(
+      circle at 10px 10px,
+      rgba(0, 0, 0, 0.015) 1px,
+      transparent 0
+    );
   background-size: 22px 22px;
   color: var(--text-primary);
   line-height: var(--leading-normal);

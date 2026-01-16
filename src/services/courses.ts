@@ -134,31 +134,6 @@ export async function getEnrolledCourses(): Promise<Course[]> {
   }
 }
 
-// Enroll in course (students only)
-export async function enrollInCourse(
-  courseId: string
-): Promise<{ message: string; enrollment: any }> {
-  try {
-    const response = await API<{ message: string; enrollment: any }>(
-      `students/enroll/${courseId}`,
-      {
-        method: "POST",
-      }
-    );
-
-    if (response.error || !response.data) {
-      throw new Error(
-        response.errorUserMessage || "Erro ao se inscrever no curso"
-      );
-    }
-
-    return response.data;
-  } catch (error) {
-    console.error("Error enrolling in course:", error);
-    throw error;
-  }
-}
-
 // Check enrollment status (students only)
 export async function checkEnrollmentStatus(
   courseId: string

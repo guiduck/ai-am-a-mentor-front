@@ -17,6 +17,7 @@ interface QuizModalProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete?: (passed: boolean) => void;
+  isMandatory?: boolean;
 }
 
 export default function QuizModal({
@@ -25,6 +26,7 @@ export default function QuizModal({
   isOpen,
   onClose,
   onComplete,
+  isMandatory = false,
 }: QuizModalProps) {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,14 +45,14 @@ export default function QuizModal({
     setIsLoading(true);
     setResult(null);
     setCurrentQuestion(0);
-    
+
     const quizData = await getQuizByVideoId(videoId);
     setQuiz(quizData);
-    
+
     if (quizData) {
       setAnswers(new Array(quizData.questions.length).fill(null));
     }
-    
+
     setIsLoading(false);
   };
 
@@ -97,6 +99,10 @@ export default function QuizModal({
   };
 
   const handleClose = () => {
+    if (isMandatory && !result) {
+      alert("Este quiz é obrigatório. Envie suas respostas para continuar.");
+      return;
+    }
     setQuiz(null);
     setResult(null);
     setAnswers([]);
@@ -109,9 +115,11 @@ export default function QuizModal({
   return (
     <div className={styles.overlay} onClick={handleClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <button className={styles.closeButton} onClick={handleClose}>
-          ✕
-        </button>
+        {(!isMandatory || result) && (
+          <button className={styles.closeButton} onClick={handleClose}>
+            ✕
+          </button>
+        )}
 
         {isLoading ? (
           <div className={styles.loading}>
@@ -201,12 +209,21 @@ export default function QuizModal({
               <p className={styles.subtitle}>{videoTitle}</p>
             </div>
 
+            {isMandatory && (
+              <p className={styles.subtitle}>
+                <strong>Quiz obrigatório:</strong> envie suas respostas para
+                continuar.
+              </p>
+            )}
+
             <div className={styles.progress}>
               <div className={styles.progressBar}>
                 <div
                   className={styles.progressFill}
                   style={{
-                    width: `${((currentQuestion + 1) / quiz.questions.length) * 100}%`,
+                    width: `${
+                      ((currentQuestion + 1) / quiz.questions.length) * 100
+                    }%`,
                   }}
                 />
               </div>
@@ -221,20 +238,24 @@ export default function QuizModal({
               </p>
 
               <div className={styles.options}>
-                {quiz.questions[currentQuestion].options.map((option, index) => (
-                  <button
-                    key={index}
-                    className={`${styles.option} ${
-                      answers[currentQuestion] === index ? styles.selected : ""
-                    }`}
-                    onClick={() => handleSelectAnswer(currentQuestion, index)}
-                  >
-                    <span className={styles.optionLetter}>
-                      {String.fromCharCode(65 + index)}
-                    </span>
-                    <span className={styles.optionText}>{option}</span>
-                  </button>
-                ))}
+                {quiz.questions[currentQuestion].options.map(
+                  (option, index) => (
+                    <button
+                      key={index}
+                      className={`${styles.option} ${
+                        answers[currentQuestion] === index
+                          ? styles.selected
+                          : ""
+                      }`}
+                      onClick={() => handleSelectAnswer(currentQuestion, index)}
+                    >
+                      <span className={styles.optionLetter}>
+                        {String.fromCharCode(65 + index)}
+                      </span>
+                      <span className={styles.optionText}>{option}</span>
+                    </button>
+                  )
+                )}
               </div>
             </div>
 
@@ -268,9 +289,7 @@ export default function QuizModal({
                   Enviar Respostas
                 </Button>
               ) : (
-                <Button onClick={handleNext}>
-                  Próxima →
-                </Button>
+                <Button onClick={handleNext}>Próxima →</Button>
               )}
             </div>
           </>

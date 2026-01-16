@@ -120,6 +120,7 @@ export async function purchaseCourseWithSplit(
   amount?: number;
   platformFee?: number;
   creatorAmount?: number;
+  payoutStatus?: "split" | "pending_onboarding";
   error?: string;
 }> {
   const response = await api<{
@@ -128,6 +129,7 @@ export async function purchaseCourseWithSplit(
     amount: number;
     platformFee: number;
     creatorAmount: number;
+    payoutStatus?: "split" | "pending_onboarding";
   }>("connect/purchase-course", {
     method: "POST",
     data: { courseId, paymentMethod },

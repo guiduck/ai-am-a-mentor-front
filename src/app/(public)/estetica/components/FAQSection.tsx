@@ -28,7 +28,7 @@ export function FAQSection() {
     },
     {
       question: 'Como funciona o pagamento?',
-      answer: 'Você pode pagar via PIX, cartão de crédito (em até 12x) ou boleto bancário. Após a confirmação do pagamento, você recebe acesso imediato ao curso.'
+      answer: 'Você pode pagar via cartão de crédito (em até 12x) ou boleto bancário. Após a confirmação do pagamento, você recebe acesso imediato ao curso.'
     },
     {
       question: 'O curso ensina sobre materiais e fornecedores?',
@@ -75,4 +75,3 @@ export function FAQSection() {
     </section>
   )
 }
-

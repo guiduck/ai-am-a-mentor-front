@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const publicRoutes = ["/landing", "/login", "/register", "/estetica"];
+const publicRoutes = ["/", "/landing", "/login", "/register", "/estetica"];
 
 export function middleware(req: NextRequest) {
   const token = req.cookies.get("access_token")?.value;
@@ -28,7 +28,9 @@ export function middleware(req: NextRequest) {
   if (token && isPublicRoute) {
     const url = req.nextUrl.clone();
     url.pathname = "/dashboard";
-    console.log("[middleware] redirect authenticated user from public -> /dashboard");
+    console.log(
+      "[middleware] redirect authenticated user from public -> /dashboard"
+    );
     return NextResponse.redirect(url);
   }
 

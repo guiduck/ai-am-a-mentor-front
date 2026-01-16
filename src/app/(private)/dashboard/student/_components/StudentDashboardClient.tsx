@@ -85,22 +85,22 @@ export default function StudentDashboardClient({
     router.push("/courses/enrolled");
   };
 
-const parsePrice = (price: string) => {
-  const normalized = price
-    .toString()
-    .replace(/[^\d,.,-]/g, "")
-    .replace(/\.(?=.*\.)/g, "")
-    .replace(",", ".");
-  const value = Number(normalized);
-  return Number.isNaN(value) ? 0 : value;
-};
+  const parsePrice = (price: string) => {
+    const normalized = price
+      .toString()
+      .replace(/[^\d,.,-]/g, "")
+      .replace(/\.(?=.*\.)/g, "")
+      .replace(",", ".");
+    const value = Number(normalized);
+    return Number.isNaN(value) ? 0 : value;
+  };
 
-const learningProgress = Math.min(100, enrolledCourses.length * 20);
-const featuredCourse = enrolledCourses[0];
-const totalInvestment = enrolledCourses.reduce(
-  (sum, course) => sum + parsePrice(course.price),
-  0
-);
+  const learningProgress = Math.min(100, enrolledCourses.length * 20);
+  const featuredCourse = enrolledCourses[0];
+  const totalInvestment = enrolledCourses.reduce(
+    (sum, course) => sum + parsePrice(course.price),
+    0
+  );
 
   return (
     <div className={styles.page}>
@@ -263,4 +263,3 @@ const totalInvestment = enrolledCourses.reduce(
     </div>
   );
 }
-
