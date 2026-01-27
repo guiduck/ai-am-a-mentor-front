@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/Button/Button";
 import { FullPageLoading } from "@/components/ui/Loading/Loading";
 import CreatorBankSetup from "@/components/payments/CreatorBankSetup";
+import CreditPurchase from "@/components/payments/CreditPurchase";
+import { getCreditBalance, type CreditBalance } from "@/services/payments";
 import {
   getSubscriptionPlans,
   getUserSubscription,
@@ -33,6 +35,9 @@ export default function PaymentsPage() {
     null
   );
   const [usage, setUsage] = useState<UsageStatus | null>(null);
+  const [creditBalance, setCreditBalance] = useState<CreditBalance | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isSubscribing, setIsSubscribing] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -40,14 +45,17 @@ export default function PaymentsPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [plansData, subscriptionData] = await Promise.all([
-        getSubscriptionPlans(user?.role as "creator" | "student"),
-        getUserSubscription(),
-      ]);
+      const [plansData, subscriptionData, creditBalanceData] =
+        await Promise.all([
+          getSubscriptionPlans(user?.role as "creator" | "student"),
+          getUserSubscription(),
+          getCreditBalance(),
+        ]);
 
       setPlans(plansData);
       setSubscription(subscriptionData.subscription);
       setUsage(subscriptionData.usage);
+      setCreditBalance(creditBalanceData);
     } catch (error) {
       console.error("Error loading data:", error);
     }
@@ -121,6 +129,18 @@ export default function PaymentsPage() {
 
   const isCreator = user?.role === "creator";
 
+  const creditsLimit = usage?.creditsLimit ?? null;
+  const creditsUsed =
+    usage?.creditsUsed ??
+    (creditsLimit !== null && usage?.creditsRemaining !== undefined
+      ? Math.max(creditsLimit - (usage?.creditsRemaining ?? 0), 0)
+      : null);
+  const creditsRemaining =
+    usage?.creditsRemaining ??
+    (creditsLimit !== null && usage?.creditsUsed !== undefined
+      ? Math.max(creditsLimit - (usage?.creditsUsed ?? 0), 0)
+      : null);
+
   return (
     <div className={styles.container}>
       <div className={styles.innerContainer}>
@@ -190,9 +210,7 @@ export default function PaymentsPage() {
                     <UsageItem
                       label="Cursos Criados"
                       current={usage.coursesCreated}
-                      limit={
-                        usage.limits?.courses ?? usage.coursesLimit ?? 0
-                      }
+                      limit={usage.limits?.courses ?? usage.coursesLimit ?? 0}
                     />
                     <UsageItem
                       label="Vídeos Enviados"
@@ -229,6 +247,56 @@ export default function PaymentsPage() {
             </CardContent>
           </Card>
         )}
+        {(creditBalance ||
+          creditsLimit !== null ||
+          creditsRemaining !== null) && (
+          <Card variant="elevated" className={styles.creditsCard}>
+            <CardHeader>
+              <CardTitle>💳 Créditos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={styles.creditsSummary}>
+                <div className={styles.creditMetric}>
+                  <span className={styles.usageLabel}>Saldo atual</span>
+                  <span className={styles.creditValue}>
+                    {creditBalance?.balance ?? 0}
+                  </span>
+                </div>
+                {creditsRemaining !== null && (
+                  <div className={styles.creditMetric}>
+                    <span className={styles.usageLabel}>
+                      Restantes no ciclo
+                    </span>
+                    <span className={styles.creditValue}>
+                      {creditsRemaining}
+                    </span>
+                  </div>
+                )}
+              </div>
+              {creditsLimit !== null && creditsUsed !== null && (
+                <div className={styles.usageGrid}>
+                  <UsageItem
+                    label="Créditos usados"
+                    current={creditsUsed}
+                    limit={creditsLimit}
+                  />
+                </div>
+              )}
+              {creditBalance?.expiresAt && (
+                <p className={styles.periodNote}>
+                  Expiração em:{" "}
+                  {new Date(creditBalance.expiresAt).toLocaleDateString(
+                    "pt-BR"
+                  )}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+        <section className={styles.creditPurchaseSection}>
+          <h2>Comprar créditos</h2>
+          <CreditPurchase onPurchaseComplete={loadData} />
+        </section>
         {/* Available Plans */}
         <section className={styles.plansSection}>
           <h2>

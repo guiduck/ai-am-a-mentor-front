@@ -15,12 +15,11 @@ interface CreditPackage {
   popular?: boolean;
 }
 
-// 1000 credits = R$ 10 (base rate)
+// Pacotes iniciais (MVP)
 const CREDIT_PACKAGES: CreditPackage[] = [
-  { credits: 500, price: 5 },
-  { credits: 1000, price: 10, popular: true },
-  { credits: 2500, price: 22, bonus: 300 },
-  { credits: 5000, price: 40, bonus: 1000 },
+  { credits: 20, price: 29 },
+  { credits: 50, price: 59, popular: true },
+  { credits: 120, price: 129 },
 ];
 
 const PAYMENT_METHODS: { id: PaymentMethod; label: string; icon: string }[] = [
@@ -195,9 +194,9 @@ export default function CreditPurchase({ onPurchaseComplete }: CreditPurchasePro
         <CardTitle>💰 Comprar Créditos</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className={styles.description}>
-          Escolha um pacote de créditos para usar na plataforma
-        </p>
+          <p className={styles.description}>
+            Escolha um pacote de créditos para usar na plataforma
+          </p>
 
         {/* Payment Method Selection */}
         <div className={styles.paymentMethodSection}>
@@ -217,7 +216,8 @@ export default function CreditPurchase({ onPurchaseComplete }: CreditPurchasePro
           </div>
           {selectedPaymentMethod === "boleto" && (
             <p className={styles.boletoNote}>
-              ⏰ Boletos vencem em 3 dias úteis. Créditos são liberados após confirmação do pagamento.
+              ⏰ Boletos vencem em 3 dias úteis. Créditos são liberados após
+              confirmação do pagamento.
             </p>
           )}
         </div>
@@ -261,10 +261,12 @@ export default function CreditPurchase({ onPurchaseComplete }: CreditPurchasePro
         </div>
 
         <div className={styles.info}>
-          <p><strong>Créditos são usados para recursos de IA:</strong></p>
+          <p>
+            <strong>Créditos são usados para recursos de IA:</strong>
+          </p>
           <ul>
-            <li>💬 Perguntas ao mentor IA (~10 créditos por pergunta)</li>
-            <li>🤖 Gerar quizzes automáticos (~50 créditos por quiz)</li>
+            <li>💬 Perguntas ao mentor IA (custo por pergunta)</li>
+            <li>🤖 Gerar quizzes automáticos (5 créditos por quiz)</li>
           </ul>
           <p className={styles.note}>
             📌 Cursos são comprados diretamente com cartão ou boleto

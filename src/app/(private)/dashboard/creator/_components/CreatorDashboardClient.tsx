@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore, type User } from "@/stores/authStore";
 import { logoutUser } from "@/actions/logout";
@@ -38,11 +38,22 @@ export default function CreatorDashboardClient({
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalLessons, setTotalLessons] = useState(0);
+  const lastLoadedUserIdRef = useRef<string | null>(null);
+
+  const hasAccessTokenCookie = () => {
+    if (typeof document === "undefined") return false;
+    return document.cookie
+      .split(";")
+      .some((cookie) => cookie.trim().startsWith("access_token="));
+  };
 
   useEffect(() => {
     if (!user && initialUser) {
-      console.log("[dashboard/creator/client] hydrating store from cookie");
-      setAuth(initialUser, "");
+      if (hasAccessTokenCookie()) {
+        console.log("[dashboard/creator/client] hydrating store from cookie");
+        setAuth(initialUser, "");
+        return;
+      }
     } else if (!user) {
       console.log("[dashboard/creator/client] initializing from API");
       initializeAuthFromAPI();
@@ -50,14 +61,22 @@ export default function CreatorDashboardClient({
   }, [initialUser, setAuth, user]);
 
   useEffect(() => {
-    if (user && user.role !== "creator") {
+    if (!user) {
+      lastLoadedUserIdRef.current = null;
+      return;
+    }
+
+    if (user.role !== "creator") {
       router.replace("/dashboard/student");
       return;
     }
 
-    if (user) {
-      loadCourses();
+    if (lastLoadedUserIdRef.current === user.id) {
+      return;
     }
+
+    lastLoadedUserIdRef.current = user.id;
+    loadCourses();
   }, [user, router]);
 
   const loadCourses = async () => {

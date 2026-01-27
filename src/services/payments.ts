@@ -8,6 +8,8 @@ import API from "@/lib/api";
 export interface CreditBalance {
   balance: number;
   userId: string;
+  expiresAt?: string | null;
+  expiresInDays?: number | null;
 }
 
 export interface Transaction {

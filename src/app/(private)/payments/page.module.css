@@ -85,6 +85,43 @@
   margin-bottom: var(--space-2);
 }
 
+.creditsCard {
+  margin-bottom: var(--space-2);
+}
+
+.creditPurchaseSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.creditPurchaseSection h2 {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin: 0;
+  text-align: center;
+}
+
+.creditsSummary {
+  display: flex;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.creditMetric {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.creditValue {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+}
+
 .usageGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

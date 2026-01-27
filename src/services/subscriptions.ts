@@ -46,6 +46,9 @@ export interface UsageStatus {
   aiQuestionsAsked: number;
   videosUploaded: number;
   coursesCreated: number;
+  creditsUsed?: number;
+  creditsLimit?: number;
+  creditsRemaining?: number;
   coursesLimit?: number;
   videosLimit?: number;
   quizzesLimit?: number;

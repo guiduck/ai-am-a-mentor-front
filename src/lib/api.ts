@@ -44,11 +44,15 @@ function getAuthToken(): string | null {
   }
 }
 
+let authExpiredHandled = false;
+
 /**
- * Clear all auth data and redirect to login
+ * Clear all auth data, show toast, and redirect to login
  */
-function handleAuthExpired(): void {
+function handleAuthExpired(message?: string): void {
   if (typeof window === "undefined") return;
+  if (authExpiredHandled) return;
+  authExpiredHandled = true;
 
   // Clear cookies
   document.cookie =
@@ -62,6 +66,15 @@ function handleAuthExpired(): void {
     useAuthStore.getState().clearAuth();
   } catch {
     // Store not available
+  }
+
+  // Notify user (client-side only)
+  try {
+    void import("sonner").then(({ toast }) => {
+      toast.error(message || "Sessão expirada. Faça login novamente.");
+    });
+  } catch {
+    // No toast available
   }
 
   // Redirect to login
@@ -126,7 +139,7 @@ export default async function API<T = any>(
 
     // Handle 401 Unauthorized - token expired or invalid
     if (response.status === 401 && !skipAuthRedirect) {
-      handleAuthExpired();
+      handleAuthExpired("Sessão expirada. Faça login novamente.");
       return {
         status: 401,
         data: null,
