@@ -41,6 +41,18 @@ export interface PaymentIntent {
   boletoExpiresAt?: number;
 }
 
+export interface PaymentIntentResult {
+  paymentIntent?: PaymentIntent;
+  error?: string;
+  code?: string;
+}
+
+export interface SetupIntentResult {
+  clientSecret?: string;
+  setupIntentId?: string;
+  error?: string;
+}
+
 /**
  * Get user's credit balance
  */
@@ -73,16 +85,19 @@ export async function createCreditsPaymentIntent(
   amount: number,
   creditsAmount: number,
   paymentMethod: PaymentMethod = "card"
-): Promise<PaymentIntent | null> {
+): Promise<PaymentIntentResult> {
   const response = await API<PaymentIntent>("payments/credits/create-intent", {
     method: "POST",
     data: { amount, creditsAmount, paymentMethod },
   });
   if (response.error || !response.data) {
     console.error("Error creating payment intent:", response.errorUserMessage);
-    return null;
+    return {
+      error: response.errorUserMessage || "Erro ao criar intenção de pagamento",
+      code: response.errorCode,
+    };
   }
-  return response.data;
+  return { paymentIntent: response.data };
 }
 
 /**
@@ -92,16 +107,42 @@ export async function createCreditsPaymentIntent(
 export async function createCoursePaymentIntent(
   courseId: string,
   paymentMethod: PaymentMethod = "card"
-): Promise<PaymentIntent | null> {
+): Promise<PaymentIntentResult> {
   const response = await API<PaymentIntent>("payments/course/create-intent", {
     method: "POST",
     data: { courseId, paymentMethod },
   });
   if (response.error || !response.data) {
-    console.error("Error creating course payment intent:", response.errorUserMessage);
-    return null;
+    console.error(
+      "Error creating course payment intent:",
+      response.errorUserMessage
+    );
+    return {
+      error: response.errorUserMessage || "Erro ao criar intenção de pagamento",
+      code: response.errorCode,
+    };
   }
-  return response.data;
+  return { paymentIntent: response.data };
+}
+
+/**
+ * Create a setup intent to save a card
+ */
+export async function createCardSetupIntent(): Promise<SetupIntentResult> {
+  const response = await API<{ clientSecret: string; setupIntentId: string }>(
+    "payments/cards/setup-intent",
+    { method: "POST" }
+  );
+  if (response.error || !response.data) {
+    console.error("Error creating setup intent:", response.errorUserMessage);
+    return {
+      error: response.errorUserMessage || "Erro ao iniciar cadastro de cartão",
+    };
+  }
+  return {
+    clientSecret: response.data.clientSecret,
+    setupIntentId: response.data.setupIntentId,
+  };
 }
 
 /**
@@ -110,10 +151,13 @@ export async function createCoursePaymentIntent(
 export async function confirmPayment(
   paymentIntentId: string
 ): Promise<{ success: boolean; status: string } | null> {
-  const response = await API<{ success: boolean; status: string }>("payments/confirm", {
-    method: "POST",
-    data: { paymentIntentId },
-  });
+  const response = await API<{ success: boolean; status: string }>(
+    "payments/confirm",
+    {
+      method: "POST",
+      data: { paymentIntentId },
+    }
+  );
   if (response.error || !response.data) {
     console.error("Error confirming payment:", response.errorUserMessage);
     return null;
@@ -132,8 +176,8 @@ export function calculateVideoUploadCost(durationInSeconds: number): number {
 
 /**
  * Calculate quiz generation cost
- * Fixed cost: 5 credits per quiz
+ * 1 crédito a cada 5 perguntas (1-5 => 1, 6-10 => 2)
  */
-export function calculateQuizGenerationCost(): number {
-  return 5;
+export function calculateQuizGenerationCost(numQuestions: number = 5): number {
+  return Math.max(1, Math.ceil(numQuestions / 5));
 }

@@ -89,6 +89,10 @@
   margin-bottom: var(--space-2);
 }
 
+.transactionsCard {
+  margin-bottom: var(--space-2);
+}
+
 .creditPurchaseSection {
   display: flex;
   flex-direction: column;
@@ -178,6 +182,62 @@
   margin: 0;
   padding-top: var(--space-3);
   border-top: 1px solid var(--border-color);
+}
+
+.transactionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.transactionItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+}
+
+.transactionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.transactionTitle {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.transactionMeta {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.transactionAmount {
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+}
+
+.transactionPositive {
+  color: var(--color-success);
+}
+
+.transactionNegative {
+  color: var(--color-danger);
+}
+
+.transactionEmpty {
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.transactionEmpty p {
+  margin: 0;
 }
 
 /* Plans Section */

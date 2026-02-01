@@ -167,9 +167,8 @@ export async function getQuizCostEstimate(
   );
 
   if (response.error) {
-    return { estimatedCost: 50 }; // Default estimate
+    return { estimatedCost: 1 };
   }
 
-  return { estimatedCost: response.data?.estimatedCost || 50 };
+  return { estimatedCost: response.data?.estimatedCost || 1 };
 }
-

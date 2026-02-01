@@ -12,7 +12,12 @@ import { Button } from "@/components/ui/Button/Button";
 import { FullPageLoading } from "@/components/ui/Loading/Loading";
 import CreatorBankSetup from "@/components/payments/CreatorBankSetup";
 import CreditPurchase from "@/components/payments/CreditPurchase";
-import { getCreditBalance, type CreditBalance } from "@/services/payments";
+import {
+  getCreditBalance,
+  getTransactions,
+  type CreditBalance,
+  type Transaction,
+} from "@/services/payments";
 import {
   getSubscriptionPlans,
   getUserSubscription,
@@ -38,6 +43,7 @@ export default function PaymentsPage() {
   const [creditBalance, setCreditBalance] = useState<CreditBalance | null>(
     null
   );
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubscribing, setIsSubscribing] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -45,17 +51,19 @@ export default function PaymentsPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [plansData, subscriptionData, creditBalanceData] =
+      const [plansData, subscriptionData, creditBalanceData, transactionsData] =
         await Promise.all([
           getSubscriptionPlans(user?.role as "creator" | "student"),
           getUserSubscription(),
           getCreditBalance(),
+          getTransactions(),
         ]);
 
       setPlans(plansData);
       setSubscription(subscriptionData.subscription);
       setUsage(subscriptionData.usage);
       setCreditBalance(creditBalanceData);
+      setTransactions(transactionsData);
     } catch (error) {
       console.error("Error loading data:", error);
     }
@@ -140,6 +148,20 @@ export default function PaymentsPage() {
     (creditsLimit !== null && usage?.creditsUsed !== undefined
       ? Math.max(creditsLimit - (usage?.creditsUsed ?? 0), 0)
       : null);
+  const recentTransactions = transactions.slice(0, 10);
+
+  const getTransactionTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      purchase: "Compra de créditos",
+      usage: "Uso de créditos",
+      refund: "Estorno",
+      bonus: "Bônus",
+      subscription_credit: "Créditos de assinatura",
+      expiration: "Expiração",
+    };
+
+    return labels[type] || "Transação";
+  };
 
   return (
     <div className={styles.container}>
@@ -297,6 +319,57 @@ export default function PaymentsPage() {
           <h2>Comprar créditos</h2>
           <CreditPurchase onPurchaseComplete={loadData} />
         </section>
+        <Card variant="elevated" className={styles.transactionsCard}>
+          <CardHeader>
+            <CardTitle>📜 Histórico de créditos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {recentTransactions.length > 0 ? (
+              <div className={styles.transactionList}>
+                {recentTransactions.map((transaction) => {
+                  const isPositive = transaction.amount > 0;
+                  const amountLabel = `${isPositive ? "+" : ""}${transaction.amount}`;
+                  return (
+                    <div
+                      key={transaction.id}
+                      className={styles.transactionItem}
+                    >
+                      <div className={styles.transactionInfo}>
+                        <span className={styles.transactionTitle}>
+                          {transaction.description ||
+                            getTransactionTypeLabel(transaction.type)}
+                        </span>
+                        <span className={styles.transactionMeta}>
+                          {getTransactionTypeLabel(transaction.type)} ·{" "}
+                          {new Date(transaction.createdAt).toLocaleString(
+                            "pt-BR",
+                            {
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            }
+                          )}
+                        </span>
+                      </div>
+                      <span
+                        className={`${styles.transactionAmount} ${
+                          isPositive
+                            ? styles.transactionPositive
+                            : styles.transactionNegative
+                        }`}
+                      >
+                        {amountLabel}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className={styles.transactionEmpty}>
+                <p>Você ainda não possui movimentações de créditos.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
         {/* Available Plans */}
         <section className={styles.plansSection}>
           <h2>
@@ -337,7 +410,21 @@ export default function PaymentsPage() {
 
                     <ul className={styles.featuresList}>
                       {Object.entries(plan.features).map(([key, value]) => {
-                        const label = getFeatureLabel(key, value);
+                        if (plan.type === "creator" && key === "quizzes_per_month") {
+                          return null;
+                        }
+
+                        if (plan.type === "student") {
+                          const allowedKeys =
+                            plan.name === "student_free"
+                              ? new Set(["courses_access"])
+                              : new Set(["ai_questions_per_day", "chat_with_teacher"]);
+                          if (!allowedKeys.has(key)) {
+                            return null;
+                          }
+                        }
+
+                        const label = getFeatureLabel(key, value, plan.type);
                         if (!label) return null;
                         return <li key={key}>✓ {label}</li>;
                       })}

@@ -8,7 +8,18 @@ import { getCoursesByCreator, Course } from "@/services/courses";
 import { initializeAuthFromAPI } from "@/lib/auth-utils";
 import { getCourseVideos } from "@/services/videos";
 import { Button } from "@/components/ui/Button/Button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/Card/Card";
 import { Loading } from "@/components/ui/Loading/Loading";
+import {
+  acceptCreatorTerms,
+  getCreatorTermsStatus,
+  type CreatorTermsStatus,
+} from "@/services/creator-terms";
 import styles from "../page.module.css";
 import { toast } from "sonner";
 
@@ -38,6 +49,12 @@ export default function CreatorDashboardClient({
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalLessons, setTotalLessons] = useState(0);
+  const [termsStatus, setTermsStatus] = useState<CreatorTermsStatus | null>(
+    null
+  );
+  const [termsChecked, setTermsChecked] = useState(false);
+  const [termsLoading, setTermsLoading] = useState(false);
+  const [termsActionLoading, setTermsActionLoading] = useState(false);
   const lastLoadedUserIdRef = useRef<string | null>(null);
 
   const hasAccessTokenCookie = () => {
@@ -77,6 +94,7 @@ export default function CreatorDashboardClient({
 
     lastLoadedUserIdRef.current = user.id;
     loadCourses();
+    loadTermsStatus();
   }, [user, router]);
 
   const loadCourses = async () => {
@@ -110,6 +128,31 @@ export default function CreatorDashboardClient({
     }
   };
 
+  const loadTermsStatus = async () => {
+    setTermsLoading(true);
+    const result = await getCreatorTermsStatus();
+    setTermsStatus(result);
+    setTermsLoading(false);
+  };
+
+  const handleAcceptTerms = async () => {
+    if (!termsStatus?.version) {
+      return;
+    }
+
+    setTermsActionLoading(true);
+    const result = await acceptCreatorTerms(termsStatus.version);
+    if ("error" in result) {
+      toast.error(result.error);
+      setTermsActionLoading(false);
+      return;
+    }
+
+    setTermsChecked(false);
+    await loadTermsStatus();
+    setTermsActionLoading(false);
+  };
+
   const handleLogout = async () => {
     try {
       await logoutUser();
@@ -136,6 +179,50 @@ export default function CreatorDashboardClient({
 
   return (
     <div className={styles.page}>
+      {termsStatus && !termsStatus.accepted && (
+        <Card variant="elevated" className={styles.termsCard}>
+          <CardHeader>
+            <CardTitle>Termos de venda</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className={styles.termsDescription}>
+              Para vender cursos, você precisa aceitar os termos de venda.
+            </p>
+            {termsLoading && (
+              <p className={styles.termsMuted}>Carregando termos...</p>
+            )}
+            {!termsLoading && (
+              <>
+                <ul className={styles.termsList}>
+                  {termsStatus.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+                <div className={styles.termsActions}>
+                  <label className={styles.termsCheckbox}>
+                    <input
+                      type="checkbox"
+                      checked={termsChecked}
+                      onChange={(event) =>
+                        setTermsChecked(event.target.checked)
+                      }
+                    />
+                    Li e aceito os termos acima
+                  </label>
+                  <Button
+                    variant="primary"
+                    onClick={handleAcceptTerms}
+                    loading={termsActionLoading}
+                    disabled={!termsChecked || termsActionLoading}
+                  >
+                    Aceitar termos
+                  </Button>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
       <div className={styles.heroCard}>
         <div className={styles.heroContent}>
           <p className={styles.heroKicker}>Dashboard do criador</p>

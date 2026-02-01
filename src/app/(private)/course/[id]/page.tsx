@@ -195,7 +195,12 @@ export default function CourseDetailPage() {
         {isStudent && !isEnrolled && (
           <>
             <div className={styles.enrollmentBanner}>
-              <h3>Desbloqueie o conteúdo completo</h3>
+              <h3>
+                <span className={styles.lockIcon} aria-hidden="true">
+                  🔒
+                </span>
+                Desbloqueie o conteúdo completo
+              </h3>
               <p>
                 Inscreva-se para assistir às aulas, acompanhar projetos guiados
                 e receber feedback da mentoria inteligente.

@@ -1,11 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
 import { getStripe } from "@/lib/stripe";
-import { createCreditsPaymentIntent, confirmPayment, PaymentMethod } from "@/services/payments";
+import {
+  createCreditsPaymentIntent,
+  confirmPayment,
+  PaymentMethod,
+} from "@/services/payments";
+import CardSetupModal from "@/components/payments/CardSetupModal";
 import { Button } from "@/components/ui/Button/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card/Card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/Card/Card";
 import styles from "./CreditPurchase.module.css";
 
 interface CreditPackage {
@@ -35,7 +50,13 @@ interface CheckoutFormProps {
   onCancel: () => void;
 }
 
-function CheckoutForm({ clientSecret, creditsAmount, amount, onSuccess, onCancel }: CheckoutFormProps) {
+function CheckoutForm({
+  clientSecret,
+  creditsAmount,
+  amount,
+  onSuccess,
+  onCancel,
+}: CheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -77,15 +98,15 @@ function CheckoutForm({ clientSecret, creditsAmount, amount, onSuccess, onCancel
   return (
     <form onSubmit={handleSubmit} className={styles.checkoutForm}>
       <div className={styles.summary}>
-        <p><strong>{creditsAmount} créditos</strong></p>
+        <p>
+          <strong>{creditsAmount} créditos</strong>
+        </p>
         <p className={styles.price}>R$ {amount.toFixed(2)}</p>
       </div>
 
       <PaymentElement />
 
-      {errorMessage && (
-        <div className={styles.error}>{errorMessage}</div>
-      )}
+      {errorMessage && <div className={styles.error}>{errorMessage}</div>}
 
       <div className={styles.actions}>
         <Button
@@ -112,12 +133,25 @@ interface CreditPurchaseProps {
   onPurchaseComplete: () => void;
 }
 
-export default function CreditPurchase({ onPurchaseComplete }: CreditPurchaseProps) {
-  const [selectedPackage, setSelectedPackage] = useState<CreditPackage | null>(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>("card");
+export default function CreditPurchase({
+  onPurchaseComplete,
+}: CreditPurchaseProps) {
+  const [selectedPackage, setSelectedPackage] = useState<CreditPackage | null>(
+    null
+  );
+  const [pendingPackage, setPendingPackage] = useState<CreditPackage | null>(
+    null
+  );
+  const [selectedPaymentMethod, setSelectedPaymentMethod] =
+    useState<PaymentMethod>("card");
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [boletoData, setBoletoData] = useState<{ url?: string; number?: string; expiresAt?: number } | null>(null);
+  const [boletoData, setBoletoData] = useState<{
+    url?: string;
+    number?: string;
+    expiresAt?: number;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showCardSetup, setShowCardSetup] = useState(false);
 
   const handleSelectPackage = async (pkg: CreditPackage) => {
     setIsLoading(true);
@@ -126,21 +160,35 @@ export default function CreditPurchase({ onPurchaseComplete }: CreditPurchasePro
 
     try {
       const totalCredits = pkg.credits + (pkg.bonus || 0);
-      const paymentIntent = await createCreditsPaymentIntent(pkg.price, totalCredits, selectedPaymentMethod);
+      const result = await createCreditsPaymentIntent(
+        pkg.price,
+        totalCredits,
+        selectedPaymentMethod
+      );
 
-      if (paymentIntent && paymentIntent.clientSecret) {
-        setClientSecret(paymentIntent.clientSecret);
-        
+      if (result.code === "CARD_REQUIRED") {
+        setPendingPackage(pkg);
+        setShowCardSetup(true);
+        setSelectedPackage(null);
+        return;
+      }
+
+      if (result.paymentIntent?.clientSecret) {
+        setClientSecret(result.paymentIntent.clientSecret);
+
         // If boleto, save boleto data
-        if (selectedPaymentMethod === "boleto" && paymentIntent.boletoUrl) {
+        if (
+          selectedPaymentMethod === "boleto" &&
+          result.paymentIntent.boletoUrl
+        ) {
           setBoletoData({
-            url: paymentIntent.boletoUrl,
-            number: paymentIntent.boletoNumber,
-            expiresAt: paymentIntent.boletoExpiresAt,
+            url: result.paymentIntent.boletoUrl,
+            number: result.paymentIntent.boletoNumber,
+            expiresAt: result.paymentIntent.boletoExpiresAt,
           });
         }
       } else {
-        alert("Erro ao criar intenção de pagamento");
+        alert(result.error || "Erro ao criar intenção de pagamento");
         setSelectedPackage(null);
       }
     } catch (error) {
@@ -165,6 +213,15 @@ export default function CreditPurchase({ onPurchaseComplete }: CreditPurchasePro
     onPurchaseComplete();
   };
 
+  const handleCardSetupSuccess = async () => {
+    setShowCardSetup(false);
+    const retryPackage = pendingPackage;
+    setPendingPackage(null);
+    if (retryPackage) {
+      await handleSelectPackage(retryPackage);
+    }
+  };
+
   if (clientSecret && selectedPackage) {
     const stripePromise = getStripe();
 
@@ -177,7 +234,9 @@ export default function CreditPurchase({ onPurchaseComplete }: CreditPurchasePro
           <Elements stripe={stripePromise} options={{ clientSecret }}>
             <CheckoutForm
               clientSecret={clientSecret}
-              creditsAmount={selectedPackage.credits + (selectedPackage.bonus || 0)}
+              creditsAmount={
+                selectedPackage.credits + (selectedPackage.bonus || 0)
+              }
               amount={selectedPackage.price}
               onSuccess={handleSuccess}
               onCancel={handleCancel}
@@ -194,9 +253,9 @@ export default function CreditPurchase({ onPurchaseComplete }: CreditPurchasePro
         <CardTitle>💰 Comprar Créditos</CardTitle>
       </CardHeader>
       <CardContent>
-          <p className={styles.description}>
-            Escolha um pacote de créditos para usar na plataforma
-          </p>
+        <p className={styles.description}>
+          Escolha um pacote de créditos para usar na plataforma
+        </p>
 
         {/* Payment Method Selection */}
         <div className={styles.paymentMethodSection}>
@@ -206,7 +265,9 @@ export default function CreditPurchase({ onPurchaseComplete }: CreditPurchasePro
               <button
                 key={method.id}
                 type="button"
-                className={`${styles.paymentMethodButton} ${selectedPaymentMethod === method.id ? styles.selected : ""}`}
+                className={`${styles.paymentMethodButton} ${
+                  selectedPaymentMethod === method.id ? styles.selected : ""
+                }`}
                 onClick={() => setSelectedPaymentMethod(method.id)}
               >
                 <span className={styles.methodIcon}>{method.icon}</span>
@@ -226,10 +287,12 @@ export default function CreditPurchase({ onPurchaseComplete }: CreditPurchasePro
           {CREDIT_PACKAGES.map((pkg, index) => (
             <div
               key={index}
-              className={`${styles.package} ${pkg.popular ? styles.popular : ""}`}
+              className={`${styles.package} ${
+                pkg.popular ? styles.popular : ""
+              }`}
             >
               {pkg.popular && <div className={styles.badge}>Mais Popular</div>}
-              
+
               <div className={styles.packageHeader}>
                 <h3>{pkg.credits} créditos</h3>
                 {pkg.bonus && (
@@ -254,7 +317,9 @@ export default function CreditPurchase({ onPurchaseComplete }: CreditPurchasePro
                 disabled={isLoading}
                 fullWidth
               >
-                {isLoading && selectedPackage === pkg ? "Carregando..." : "Comprar"}
+                {isLoading && selectedPackage === pkg
+                  ? "Carregando..."
+                  : "Comprar"}
               </Button>
             </div>
           ))}
@@ -265,18 +330,22 @@ export default function CreditPurchase({ onPurchaseComplete }: CreditPurchasePro
             <strong>Créditos são usados para recursos de IA:</strong>
           </p>
           <ul>
-            <li>💬 Perguntas ao mentor IA (custo por pergunta)</li>
-            <li>🤖 Gerar quizzes automáticos (5 créditos por quiz)</li>
+            <li>💬 Perguntas ao mentor IA (1 crédito por pergunta)</li>
+            <li>
+              🤖 Gerar quizzes automáticos (1 crédito até 5 perguntas; 2
+              créditos até 10)
+            </li>
           </ul>
           <p className={styles.note}>
             📌 Cursos são comprados diretamente com cartão ou boleto
           </p>
         </div>
+        <CardSetupModal
+          isOpen={showCardSetup}
+          onClose={() => setShowCardSetup(false)}
+          onSuccess={handleCardSetupSuccess}
+        />
       </CardContent>
     </Card>
   );
 }
-
-
-
-

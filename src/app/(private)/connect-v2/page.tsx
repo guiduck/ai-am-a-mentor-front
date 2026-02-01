@@ -2,15 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card/Card";
 import {
-  createBillingPortalV2,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/Card/Card";
+import {
   createConnectAccountV2,
   createProductV2,
   createSubscriptionCheckoutV2,
   getConnectStatusV2,
   getOnboardingLinkV2,
   listProductsV2,
+  openBillingPortalV2,
   type ConnectV2Status,
   type StripeProduct,
 } from "@/services/stripe-connect-v2";
@@ -234,7 +239,9 @@ export default function ConnectV2Page() {
                   <div>
                     <strong>{product.name}</strong>
                     {product.description && (
-                      <p className={styles.description}>{product.description}</p>
+                      <p className={styles.description}>
+                        {product.description}
+                      </p>
                     )}
                   </div>
                   <span className={styles.priceTag}>
@@ -250,9 +257,7 @@ export default function ConnectV2Page() {
 
             {storefrontUrl && (
               <div className={styles.storefront}>
-                <span>
-                  Link público da loja (demo com accountId):
-                </span>
+                <span>Link público da loja (demo com accountId):</span>
                 <a href={storefrontUrl} target="_blank" rel="noreferrer">
                   {storefrontUrl}
                 </a>

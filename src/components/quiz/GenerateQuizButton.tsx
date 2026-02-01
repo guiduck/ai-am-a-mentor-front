@@ -30,7 +30,7 @@ export default function GenerateQuizButton({
   const [isGenerating, setIsGenerating] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [numQuestions, setNumQuestions] = useState(5);
-  const [estimatedCost, setEstimatedCost] = useState(50);
+  const [estimatedCost, setEstimatedCost] = useState(1);
 
   useEffect(() => {
     checkExistingQuiz();

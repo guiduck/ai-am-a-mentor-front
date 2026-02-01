@@ -19,10 +19,12 @@ export interface SubscriptionPlan {
     quizzes_per_month?: number;
     commission_rate?: number;
     ai_questions_per_day?: number;
+    credits_per_month?: number;
     support?: string;
     certificates?: boolean;
     courses_access?: string;
     progress_reports?: boolean;
+    chat_with_teacher?: boolean;
   };
   isActive: number;
 }
@@ -185,21 +187,43 @@ export function formatPlanPrice(plan: SubscriptionPlan): string {
 // Helper to get feature label
 export function getFeatureLabel(
   key: string,
-  value: number | string | boolean
+  value: number | string | boolean,
+  planType?: "creator" | "student"
 ): string {
+  if (typeof value === "number" && value === 0) {
+    return "";
+  }
+
+  if (planType === "student") {
+    if (key === "courses" || key === "videos" || key === "quizzes_per_month") {
+      return "";
+    }
+  }
+
   const labels: Record<string, (v: number | string | boolean) => string> = {
     courses: (v) => (v === -1 ? "Cursos ilimitados" : `Até ${v} cursos`),
     videos: (v) => (v === -1 ? "Vídeos ilimitados" : `Até ${v} vídeos`),
     quizzes_per_month: (v) =>
       v === -1 ? "Quizzes ilimitados" : v === 0 ? "Sem quizzes" : `${v} quizzes/mês`,
+    credits_per_month: (v) =>
+      v === -1
+        ? "Créditos ilimitados"
+        : v === 0
+        ? ""
+        : `${v} créditos/mês`,
     ai_questions_per_day: (v) =>
-      v === -1 ? "Perguntas IA ilimitadas" : v === 0 ? "Sem IA" : `${v} perguntas/dia`,
+      v === -1
+        ? "Assistente de IA ilimitado"
+        : v === 0
+        ? ""
+        : "Assistente de IA para perguntas",
     commission_rate: (v) => `${((v as number) * 100).toFixed(0)}% taxa`,
     support: (v) =>
       v === "priority" ? "Suporte prioritário" : v === "email" ? "Suporte por email" : "Comunidade",
     certificates: (v) => (v ? "Certificados inclusos" : ""),
-    courses_access: (v) => (v === "all" ? "Acesso a todos os cursos" : "Cursos comprados"),
+    courses_access: (v) => (v === "all" ? "Acesso a todos os cursos" : "Acesso a cursos comprados"),
     progress_reports: (v) => (v ? "Relatórios de progresso" : ""),
+    chat_with_teacher: (v) => (v ? "Chat com professor" : ""),
   };
 
   const formatter = labels[key];
