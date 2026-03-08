@@ -4,12 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/Button/Button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/Card/Card";
 import { FullPageLoading } from "@/components/ui/Loading/Loading";
 import { Label } from "@/components/ui/label";
 import {
@@ -34,28 +28,52 @@ export default function MessagesPage() {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [creatorContacts, setCreatorContacts] = useState<CreatorContact[]>([]);
   const [studentContacts, setStudentContacts] = useState<StudentContact[]>([]);
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(
-    null
-  );
+  const [selectedConversationId, setSelectedConversationId] = useState<
+    string | null
+  >(null);
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [messageDraft, setMessageDraft] = useState("");
   const [startCourseId, setStartCourseId] = useState("");
   const [startRecipientId, setStartRecipientId] = useState("");
-  const [startMessage, setStartMessage] = useState("");
   const [isStarting, setIsStarting] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const lastMessageAtRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const autoStartKeyRef = useRef<string | null>(null);
 
   const isCreator = user?.role === "creator";
 
   const selectedConversation = useMemo(
     () =>
-      conversations.find((conversation) => conversation.id === selectedConversationId) ||
-      null,
+      conversations.find(
+        (conversation) => conversation.id === selectedConversationId
+      ) || null,
     [conversations, selectedConversationId]
   );
+
+  const conversationsByCourse = useMemo(() => {
+    const grouped = new Map<
+      string,
+      { courseId: string; courseTitle: string; items: ConversationSummary[] }
+    >();
+
+    conversations.forEach((conversation) => {
+      const existing = grouped.get(conversation.courseId);
+      if (existing) {
+        existing.items.push(conversation);
+        return;
+      }
+
+      grouped.set(conversation.courseId, {
+        courseId: conversation.courseId,
+        courseTitle: conversation.courseTitle,
+        items: [conversation],
+      });
+    });
+
+    return Array.from(grouped.values());
+  }, [conversations]);
 
   const selectedCourseContacts = useMemo(() => {
     if (!isCreator) {
@@ -68,6 +86,81 @@ export default function MessagesPage() {
 
     return selected?.students || [];
   }, [creatorContacts, isCreator, startCourseId]);
+
+  const selectedStartCourse = useMemo(() => {
+    if (!startCourseId) {
+      return null;
+    }
+
+    return (isCreator ? creatorContacts : studentContacts).find(
+      (contact) => contact.courseId === startCourseId
+    );
+  }, [creatorContacts, isCreator, startCourseId, studentContacts]);
+
+  const selectedStartParticipant = useMemo(() => {
+    if (!startCourseId) {
+      return null;
+    }
+
+    if (isCreator) {
+      return (
+        selectedCourseContacts.find((student) => student.id === startRecipientId) ||
+        null
+      );
+    }
+
+    const contact = studentContacts.find(
+      (item) => item.courseId === startCourseId
+    );
+    if (!contact) {
+      return null;
+    }
+
+    return { id: contact.creatorId, name: contact.creatorName };
+  }, [
+    isCreator,
+    selectedCourseContacts,
+    startCourseId,
+    startRecipientId,
+    studentContacts,
+  ]);
+
+  const canCompose =
+    !!selectedConversation || (!!startCourseId && !!resolveAutoRecipientId());
+
+  const headerParticipantName =
+    selectedConversation?.participantName || selectedStartParticipant?.name || "";
+
+  const headerCourseTitle =
+    selectedConversation?.courseTitle || selectedStartCourse?.courseTitle || "";
+
+  const getInitials = (name: string) => {
+    const cleaned = name.trim();
+    if (!cleaned) {
+      return "?";
+    }
+
+    const parts = cleaned.split(" ").filter(Boolean);
+    const first = parts[0]?.[0] || "";
+    const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+    return `${first}${last}`.toUpperCase();
+  };
+
+  const resolveAutoRecipientId = () => {
+    if (!startCourseId) {
+      return null;
+    }
+
+    if (isCreator) {
+      return startRecipientId || null;
+    }
+
+    const contact = studentContacts.find(
+      (item) => item.courseId === startCourseId
+    );
+
+    return contact?.creatorId || null;
+  };
 
   const loadConversations = async () => {
     const data = await getConversations();
@@ -87,7 +180,10 @@ export default function MessagesPage() {
     setCreatorContacts([]);
   };
 
-  const loadMessages = async (conversationId: string, since?: string | null) => {
+  const loadMessages = async (
+    conversationId: string,
+    since?: string | null
+  ) => {
     const list = await getMessages(conversationId, since);
 
     if (since) {
@@ -117,55 +213,87 @@ export default function MessagesPage() {
     setIsLoadingMessages(false);
   };
 
-  const handleStartConversation = async () => {
-    if (!startCourseId) {
-      toast.error("Selecione um curso para iniciar a conversa.");
+  const handleAutoStartConversation = async (
+    courseId: string,
+    participantId: string
+  ) => {
+    const existing = conversations.find(
+      (conversation) =>
+        conversation.courseId === courseId &&
+        conversation.participantId === participantId
+    );
+
+    if (existing) {
+      if (existing.id !== selectedConversationId) {
+        await handleSelectConversation(existing.id);
+      }
       return;
     }
 
-    if (isCreator && !startRecipientId) {
-      toast.error("Selecione um aluno para iniciar a conversa.");
-      return;
-    }
-
-    if (!startMessage.trim()) {
-      toast.error("Digite uma mensagem para iniciar a conversa.");
+    if (isStarting) {
       return;
     }
 
     setIsStarting(true);
-
     const result = await startConversation({
-      courseId: startCourseId,
-      recipientId: isCreator ? startRecipientId : undefined,
-      message: startMessage.trim(),
+      courseId,
+      recipientId: isCreator ? participantId : undefined,
+      message: "",
     });
-
     setIsStarting(false);
 
     if ("error" in result) {
+      autoStartKeyRef.current = null;
       toast.error(result.error);
       return;
     }
 
-    toast.success("Conversa iniciada com sucesso!");
-    setStartMessage("");
     await loadConversations();
     await handleSelectConversation(result.conversationId);
   };
 
   const handleSendMessage = async () => {
-    if (!selectedConversationId) {
-      return;
-    }
-
     if (!messageDraft.trim()) {
       toast.error("Digite uma mensagem antes de enviar.");
       return;
     }
 
+    if (!selectedConversationId) {
+      if (!startCourseId) {
+        toast.error("Selecione um curso para iniciar a conversa.");
+        return;
+      }
+
+      const participantId = resolveAutoRecipientId();
+      if (isCreator && !participantId) {
+        toast.error("Selecione um aluno para iniciar a conversa.");
+        return;
+      }
+
+      setIsSending(true);
+      const result = await startConversation({
+        courseId: startCourseId,
+        recipientId: isCreator ? participantId || undefined : undefined,
+        message: messageDraft.trim(),
+      });
+      setIsSending(false);
+
+      if ("error" in result) {
+        toast.error(result.error);
+        return;
+      }
+
+      setMessageDraft("");
+      await loadConversations();
+      await handleSelectConversation(result.conversationId);
+      return;
+    }
+
     setIsSending(true);
-    const result = await sendMessage(selectedConversationId, messageDraft.trim());
+    const result = await sendMessage(
+      selectedConversationId,
+      messageDraft.trim()
+    );
     setIsSending(false);
 
     if ("error" in result) {
@@ -221,6 +349,31 @@ export default function MessagesPage() {
   }, [messages]);
 
   useEffect(() => {
+    autoStartKeyRef.current = null;
+  }, [startCourseId]);
+
+  useEffect(() => {
+    const participantId = resolveAutoRecipientId();
+    if (!startCourseId || !participantId) {
+      return;
+    }
+
+    const autoKey = `${startCourseId}:${participantId}`;
+    if (autoStartKeyRef.current === autoKey) {
+      return;
+    }
+
+    autoStartKeyRef.current = autoKey;
+    void handleAutoStartConversation(startCourseId, participantId);
+  }, [
+    startCourseId,
+    startRecipientId,
+    isCreator,
+    studentContacts,
+    conversations,
+  ]);
+
+  useEffect(() => {
     if (selectedCourseContacts.length === 0) {
       setStartRecipientId("");
       return;
@@ -244,191 +397,209 @@ export default function MessagesPage() {
         </div>
 
         <div className={styles.layout}>
-          <aside className={styles.sidebar}>
-            <Card variant="elevated" className={styles.startCard}>
-              <CardHeader>
-                <CardTitle>Iniciar conversa</CardTitle>
-              </CardHeader>
-              <CardContent className={styles.startContent}>
-                <div className={styles.formGroup}>
-                  <Label htmlFor="course">Curso</Label>
-                  <select
-                    id="course"
-                    className={styles.select}
-                    value={startCourseId}
-                    onChange={(event) => {
-                      setStartCourseId(event.target.value);
-                      setStartRecipientId("");
-                    }}
-                  >
-                    <option value="">Selecione</option>
-                    {(isCreator ? creatorContacts : studentContacts).map((contact) => (
+          <aside className={styles.sidebarPanel}>
+            <div className={styles.sidebarHeader}>
+              <div>
+                <h2>Conversas</h2>
+                <p>Selecione um aluno para conversar.</p>
+              </div>
+            </div>
+
+            <div className={styles.startForm}>
+              <div className={styles.formGroup}>
+                <Label htmlFor="course">Curso</Label>
+                <select
+                  id="course"
+                  className={styles.select}
+                  value={startCourseId}
+                  onChange={(event) => {
+                    setStartCourseId(event.target.value);
+                    setStartRecipientId("");
+                  }}
+                >
+                  <option value="">Selecione</option>
+                  {(isCreator ? creatorContacts : studentContacts).map(
+                    (contact) => (
                       <option key={contact.courseId} value={contact.courseId}>
                         {contact.courseTitle}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+
+              {isCreator && startCourseId && (
+                <div className={styles.formGroup}>
+                  <Label htmlFor="student">Aluno</Label>
+                  <select
+                    id="student"
+                    className={styles.select}
+                    value={startRecipientId}
+                    onChange={(event) =>
+                      setStartRecipientId(event.target.value)
+                    }
+                  >
+                    <option value="">Selecione</option>
+                    {selectedCourseContacts.map((student) => (
+                      <option key={student.id} value={student.id}>
+                        {student.name}
                       </option>
                     ))}
                   </select>
                 </div>
+              )}
 
-                {isCreator && startCourseId && (
-                  <div className={styles.formGroup}>
-                    <Label htmlFor="student">Aluno</Label>
-                    <select
-                      id="student"
-                      className={styles.select}
-                      value={startRecipientId}
-                      onChange={(event) => setStartRecipientId(event.target.value)}
-                    >
-                      <option value="">Selecione</option>
-                      {selectedCourseContacts.map((student) => (
-                        <option key={student.id} value={student.id}>
-                          {student.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {!isCreator && startCourseId && (
-                  <div className={styles.helperText}>
-                    Você falará diretamente com o criador deste curso.
-                  </div>
-                )}
-
-                <div className={styles.formGroup}>
-                  <Label htmlFor="startMessage">Mensagem</Label>
-                  <textarea
-                    id="startMessage"
-                    className={styles.textarea}
-                    rows={3}
-                    value={startMessage}
-                    onChange={(event) => setStartMessage(event.target.value)}
-                    placeholder="Escreva sua primeira mensagem"
-                  />
+              {!isCreator && startCourseId && (
+                <div className={styles.helperText}>
+                  Você falará diretamente com o criador deste curso.
                 </div>
+              )}
 
-                <Button
-                  variant="primary"
-                  onClick={handleStartConversation}
-                  loading={isStarting}
-                  disabled={isStarting}
-                >
-                  Iniciar conversa
-                </Button>
-              </CardContent>
-            </Card>
+              {isStarting && (
+                <span className={styles.startingInfo}>
+                  Preparando conversa...
+                </span>
+              )}
+            </div>
 
-            <Card variant="elevated" className={styles.conversationsCard}>
-              <CardHeader>
-                <CardTitle>Conversas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {conversations.length === 0 ? (
-                  <p className={styles.emptyState}>
-                    Nenhuma conversa iniciada ainda.
-                  </p>
-                ) : (
-                  <div className={styles.conversationList}>
-                    {conversations.map((conversation) => (
-                      <button
-                        key={conversation.id}
-                        type="button"
-                        className={`${styles.conversationItem} ${
-                          conversation.id === selectedConversationId
-                            ? styles.conversationActive
-                            : ""
-                        }`}
-                        onClick={() => handleSelectConversation(conversation.id)}
-                      >
-                        <span className={styles.conversationName}>
-                          {conversation.participantName}
-                        </span>
-                        <span className={styles.conversationMeta}>
-                          {conversation.courseTitle}
-                        </span>
-                        {conversation.lastMessageAt && (
-                          <span className={styles.conversationDate}>
-                            {new Date(conversation.lastMessageAt).toLocaleDateString(
-                              "pt-BR"
+            <div className={styles.conversationGroups}>
+              {conversationsByCourse.length === 0 ? (
+                <p className={styles.emptyState}>
+                  Nenhuma conversa iniciada ainda.
+                </p>
+              ) : (
+                conversationsByCourse.map((group) => (
+                  <div
+                    key={group.courseId}
+                    className={styles.conversationGroup}
+                  >
+                    <span className={styles.groupTitle}>
+                      {group.courseTitle}
+                    </span>
+                    <div className={styles.conversationList}>
+                      {group.items.map((conversation) => (
+                        <button
+                          key={conversation.id}
+                          type="button"
+                          className={`${styles.conversationItem} ${
+                            conversation.id === selectedConversationId
+                              ? styles.conversationActive
+                              : ""
+                          }`}
+                          onClick={() =>
+                            handleSelectConversation(conversation.id)
+                          }
+                        >
+                          <div className={styles.conversationAvatar}>
+                            {getInitials(conversation.participantName)}
+                          </div>
+                          <div className={styles.conversationBody}>
+                            <div className={styles.conversationHeader}>
+                              <span className={styles.conversationName}>
+                                {conversation.participantName}
+                              </span>
+                              {conversation.unreadCount &&
+                                conversation.unreadCount > 0 && (
+                                  <span className={styles.unreadBadge}>
+                                    {conversation.unreadCount}
+                                  </span>
+                                )}
+                            </div>
+                            {conversation.lastMessageAt && (
+                              <span className={styles.conversationDate}>
+                                {new Date(
+                                  conversation.lastMessageAt
+                                ).toLocaleDateString("pt-BR")}
+                              </span>
                             )}
-                          </span>
-                        )}
-                      </button>
-                    ))}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                ))
+              )}
+            </div>
           </aside>
 
-          <section className={styles.chatSection}>
-            <Card variant="elevated" className={styles.chatCard}>
-              <CardHeader>
-                <CardTitle>
-                  {selectedConversation
-                    ? `${selectedConversation.participantName} · ${selectedConversation.courseTitle}`
-                    : "Selecione uma conversa"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className={styles.chatContent}>
-                {selectedConversation ? (
-                  <>
-                    <div className={styles.messageList}>
-                      {isLoadingMessages ? (
-                        <p className={styles.emptyState}>Carregando mensagens...</p>
-                      ) : messages.length === 0 ? (
-                        <p className={styles.emptyState}>
-                          Nenhuma mensagem ainda. Envie a primeira!
-                        </p>
-                      ) : (
-                        messages.map((message) => {
-                          const isMine = message.senderId === user?.id;
-                          return (
-                            <div
-                              key={message.id}
-                              className={`${styles.messageBubble} ${
-                                isMine ? styles.messageMine : styles.messageOther
-                              }`}
-                            >
-                              <p>{message.body}</p>
-                              <span className={styles.messageDate}>
-                                {new Date(message.createdAt).toLocaleTimeString("pt-BR", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                              </span>
-                            </div>
-                          );
-                        })
-                      )}
-                      <div ref={messagesEndRef} />
-                    </div>
-
-                    <div className={styles.composer}>
-                      <textarea
-                        className={styles.textarea}
-                        rows={3}
-                        value={messageDraft}
-                        onChange={(event) => setMessageDraft(event.target.value)}
-                        placeholder="Digite sua mensagem"
-                      />
-                      <Button
-                        variant="primary"
-                        onClick={handleSendMessage}
-                        loading={isSending}
-                        disabled={isSending}
-                      >
-                        Enviar mensagem
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <div className={styles.emptyState}>
-                    Selecione uma conversa ou inicie uma nova.
-                  </div>
+          <section className={styles.chatPanel}>
+            <div className={styles.chatHeader}>
+              <div>
+                <h3>
+                  {headerParticipantName || "Selecione uma conversa"}
+                </h3>
+                {headerCourseTitle && (
+                  <span className={styles.chatSubHeader}>{headerCourseTitle}</span>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+              {headerParticipantName && (
+                <div className={styles.chatAvatar}>
+                  {getInitials(headerParticipantName)}
+                </div>
+              )}
+            </div>
+
+            <div className={styles.chatBody}>
+              {selectedConversation ? (
+                <div className={styles.messageList}>
+                  {isLoadingMessages ? (
+                    <p className={styles.emptyState}>Carregando mensagens...</p>
+                  ) : messages.length === 0 ? (
+                    <p className={styles.emptyState}>
+                      Nenhuma mensagem ainda. Envie a primeira!
+                    </p>
+                  ) : (
+                    messages.map((message) => {
+                      const isMine = message.senderId === user?.id;
+                      return (
+                        <div
+                          key={message.id}
+                          className={`${styles.messageBubble} ${
+                            isMine ? styles.messageMine : styles.messageOther
+                          }`}
+                        >
+                          <p>{message.body}</p>
+                          <span className={styles.messageDate}>
+                            {new Date(message.createdAt).toLocaleTimeString(
+                              "pt-BR",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              ) : (
+                <div className={styles.emptyState}>
+                  Selecione um aluno para iniciar uma conversa.
+                </div>
+              )}
+            </div>
+
+            {canCompose && (
+              <div className={styles.chatComposer}>
+                <textarea
+                  className={styles.textarea}
+                  rows={2}
+                  value={messageDraft}
+                  onChange={(event) => setMessageDraft(event.target.value)}
+                  placeholder="Digite sua mensagem"
+                />
+                <Button
+                  variant="primary"
+                  onClick={handleSendMessage}
+                  loading={isSending}
+                  disabled={isSending}
+                >
+                  Enviar
+                </Button>
+              </div>
+            )}
           </section>
         </div>
       </div>

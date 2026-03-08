@@ -31,18 +31,30 @@
   gap: var(--space-5);
 }
 
-.sidebar {
+.sidebarPanel {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  min-height: 520px;
 }
 
-.startCard {
-  position: sticky;
-  top: var(--space-4);
+.sidebarHeader h2 {
+  margin: 0 0 var(--space-1) 0;
+  font-size: var(--text-lg);
+  color: var(--text-primary);
 }
 
-.startContent {
+.sidebarHeader p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.startForm {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -75,8 +87,30 @@
   color: var(--text-secondary);
 }
 
-.conversationsCard {
-  height: 100%;
+.startingInfo {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.conversationGroups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
+.conversationGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.groupTitle {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
 }
 
 .conversationList {
@@ -87,8 +121,7 @@
 
 .conversationItem {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--space-1);
   padding: var(--space-3);
   border-radius: var(--radius-md);
@@ -96,6 +129,34 @@
   background: var(--bg-secondary);
   text-align: left;
   transition: var(--transition-base);
+}
+
+.conversationAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  display: grid;
+  place-items: center;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  flex-shrink: 0;
+}
+
+.conversationBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+.conversationHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--space-2);
 }
 
 .conversationItem:hover {
@@ -112,9 +173,15 @@
   color: var(--text-primary);
 }
 
-.conversationMeta {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
+.unreadBadge {
+  min-width: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: var(--color-gray-900);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  text-align: center;
 }
 
 .conversationDate {
@@ -122,27 +189,60 @@
   color: var(--text-tertiary);
 }
 
-.chatSection {
-  min-height: 520px;
-}
-
-.chatCard {
-  height: 100%;
-}
-
-.chatContent {
+.chatPanel {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  height: 100%;
+  min-height: 520px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+}
+
+.chatHeader {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.chatHeader h3 {
+  margin: 0;
+  font-size: var(--text-lg);
+  color: var(--text-primary);
+}
+
+.chatSubHeader {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.chatAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  display: grid;
+  place-items: center;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+}
+
+.chatBody {
+  flex: 1;
+  padding: var(--space-4);
+  overflow: hidden;
 }
 
 .messageList {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding-right: var(--space-2);
-  max-height: 520px;
+  height: 100%;
   overflow-y: auto;
 }
 
@@ -173,27 +273,27 @@
   opacity: 0.7;
 }
 
-.composer {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
 .emptyState {
   text-align: center;
   color: var(--text-secondary);
 }
 
+.chatComposer {
+  border-top: 1px solid var(--border-color);
+  padding: var(--space-4);
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.chatComposer .textarea {
+  flex: 1;
+  min-height: 48px;
+  resize: none;
+}
+
 @media (max-width: 960px) {
   .layout {
     grid-template-columns: 1fr;
-  }
-
-  .startCard {
-    position: static;
-  }
-
-  .messageList {
-    max-height: 360px;
   }
 }

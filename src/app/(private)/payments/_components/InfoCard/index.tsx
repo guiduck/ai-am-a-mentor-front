@@ -29,16 +29,19 @@ const InfoCard = ({ isCreator }: InfoCardProps) => {
     return (
       <>
         <div className={styles.infoItem}>
-          <strong>Crie Cursos</strong>
-          <p>Publique seus cursos em vídeo e alcance milhares de alunos.</p>
+          <strong>Ative suas vendas</strong>
+          <p>Aceite os termos e publique cursos pagos (cartão e boleto).</p>
         </div>
         <div className={styles.infoItem}>
-          <strong>Quizzes com IA</strong>
-          <p>Gere quizzes automaticamente baseados no conteúdo das aulas.</p>
+          <strong>Créditos e IA</strong>
+          <p>Receba créditos mensais, faça top-up e gere quizzes com IA.</p>
         </div>
         <div className={styles.infoItem}>
           <strong>Receba Pagamentos</strong>
-          <p>Configure sua conta bancária e receba suas vendas diretamente.</p>
+          <p>
+            Configure o Stripe para receber repasses. Sem cadastro, o repasse
+            fica pendente.
+          </p>
         </div>
       </>
     );

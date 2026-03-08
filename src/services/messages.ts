@@ -8,6 +8,7 @@ export interface ConversationSummary {
   participantName: string;
   lastMessageAt?: string | null;
   createdAt: string;
+  unreadCount?: number;
 }
 
 export interface ConversationDetails {
@@ -112,15 +113,17 @@ export async function getMessages(
 export async function startConversation(data: {
   courseId: string;
   recipientId?: string;
-  message: string;
-}): Promise<{ conversationId: string; messageId: string } | { error: string }> {
-  const response = await API<{ conversationId: string; messageId: string }>(
-    "messages/conversations/start",
-    {
-      method: "POST",
-      data,
-    }
-  );
+  message?: string;
+}): Promise<
+  { conversationId: string; messageId?: string | null } | { error: string }
+> {
+  const response = await API<{
+    conversationId: string;
+    messageId?: string | null;
+  }>("messages/conversations/start", {
+    method: "POST",
+    data,
+  });
 
   if (response.error || !response.data) {
     return { error: response.errorUserMessage || "Erro ao iniciar conversa" };
@@ -157,7 +160,10 @@ export async function markConversationRead(
   );
 
   if (response.error || !response.data) {
-    console.error("Error marking conversation as read:", response.errorUserMessage);
+    console.error(
+      "Error marking conversation as read:",
+      response.errorUserMessage
+    );
     return null;
   }
 

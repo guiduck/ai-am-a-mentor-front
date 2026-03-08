@@ -35,6 +35,7 @@ import InfoCard from "./_components/InfoCard";
 
 export default function PaymentsPage() {
   const { user } = useAuthStore();
+  const transactionsPageSize = 10;
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [subscription, setSubscription] = useState<UserSubscription | null>(
     null
@@ -44,7 +45,10 @@ export default function PaymentsPage() {
     null
   );
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactionsPage, setTransactionsPage] = useState(1);
+  const [transactionsHasMore, setTransactionsHasMore] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isSubscribing, setIsSubscribing] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
 
@@ -56,14 +60,16 @@ export default function PaymentsPage() {
           getSubscriptionPlans(user?.role as "creator" | "student"),
           getUserSubscription(),
           getCreditBalance(),
-          getTransactions(),
+          getTransactions(1, transactionsPageSize),
         ]);
 
       setPlans(plansData);
       setSubscription(subscriptionData.subscription);
       setUsage(subscriptionData.usage);
       setCreditBalance(creditBalanceData);
-      setTransactions(transactionsData);
+      setTransactions(transactionsData.items);
+      setTransactionsPage(transactionsData.page);
+      setTransactionsHasMore(transactionsData.hasMore);
     } catch (error) {
       console.error("Error loading data:", error);
     }
@@ -148,7 +154,24 @@ export default function PaymentsPage() {
     (creditsLimit !== null && usage?.creditsUsed !== undefined
       ? Math.max(creditsLimit - (usage?.creditsUsed ?? 0), 0)
       : null);
-  const recentTransactions = transactions.slice(0, 10);
+  const loadMoreTransactions = async () => {
+    if (isLoadingMore || !transactionsHasMore) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+    try {
+      const nextPage = transactionsPage + 1;
+      const response = await getTransactions(nextPage, transactionsPageSize);
+      setTransactions((prev) => [...prev, ...response.items]);
+      setTransactionsPage(response.page);
+      setTransactionsHasMore(response.hasMore);
+    } catch (error) {
+      console.error("Error loading more transactions:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   const getTransactionTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
@@ -324,9 +347,9 @@ export default function PaymentsPage() {
             <CardTitle>📜 Histórico de créditos</CardTitle>
           </CardHeader>
           <CardContent>
-            {recentTransactions.length > 0 ? (
+            {transactions.length > 0 ? (
               <div className={styles.transactionList}>
-                {recentTransactions.map((transaction) => {
+                {transactions.map((transaction) => {
                   const isPositive = transaction.amount > 0;
                   const amountLabel = `${isPositive ? "+" : ""}${transaction.amount}`;
                   return (
@@ -366,6 +389,18 @@ export default function PaymentsPage() {
             ) : (
               <div className={styles.transactionEmpty}>
                 <p>Você ainda não possui movimentações de créditos.</p>
+              </div>
+            )}
+            {transactionsHasMore && (
+              <div className={styles.transactionsFooter}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={loadMoreTransactions}
+                  loading={isLoadingMore}
+                >
+                  {isLoadingMore ? "Carregando..." : "Ver mais"}
+                </Button>
               </div>
             )}
           </CardContent>

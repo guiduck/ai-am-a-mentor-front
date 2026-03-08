@@ -34,6 +34,7 @@ const schema = z
         "Senha deve ter pelo menos 6 caracteres"
       ),
     confirmPassword: z.string().optional(),
+    emailNotificationsEnabled: z.boolean(),
   })
   .refine((data) => {
     // If password is provided, confirmPassword must match
@@ -60,9 +61,15 @@ export default function ProfilePage() {
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
+    watch,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      emailNotificationsEnabled: true,
+    },
   });
+
+  const emailNotificationsEnabled = watch("emailNotificationsEnabled");
 
   useEffect(() => {
     loadUserData();
@@ -86,6 +93,7 @@ export default function ProfilePage() {
           email: currentUser.email,
           password: "",
           confirmPassword: "",
+          emailNotificationsEnabled: currentUser.emailNotificationsEnabled,
         });
         // Update store if needed
         if (!user || user.id !== currentUser.id) {
@@ -110,9 +118,11 @@ export default function ProfilePage() {
         username?: string;
         email?: string;
         password?: string;
+        emailNotificationsEnabled?: boolean;
       } = {
         username: data.username,
         email: data.email,
+        emailNotificationsEnabled: data.emailNotificationsEnabled,
       };
 
       // Only include password if it was provided
@@ -139,6 +149,7 @@ export default function ProfilePage() {
           email: result.data.user.email,
           password: "",
           confirmPassword: "",
+          emailNotificationsEnabled: result.data.user.emailNotificationsEnabled,
         });
       }
     } catch (error) {
@@ -292,6 +303,29 @@ export default function ProfilePage() {
               )}
             </div>
 
+            <div className={styles.preferencesSection}>
+              <div className={styles.preferenceText}>
+                <p className={styles.preferenceTitle}>
+                  Notificações por email
+                </p>
+                <p className={styles.preferenceDescription}>
+                  Receba avisos quando houver novas mensagens no seu inbox.
+                </p>
+              </div>
+              <label className={styles.toggle}>
+                <input
+                  type="checkbox"
+                  {...register("emailNotificationsEnabled")}
+                />
+                <span className={styles.toggleTrack}>
+                  <span className={styles.toggleThumb} />
+                </span>
+                <span className={styles.toggleText}>
+                  {emailNotificationsEnabled ? "Ativadas" : "Desativadas"}
+                </span>
+              </label>
+            </div>
+
             <div
               style={{
                 display: "flex",
@@ -382,4 +416,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-

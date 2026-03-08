@@ -168,6 +168,15 @@ export default function CourseDetailPage() {
                 <Button
                   variant="outline"
                   size="large"
+                  onClick={() => router.push("/messages")}
+                >
+                  {isCreator ? "Mensagens do curso" : "Falar com o criador"}
+                </Button>
+              ) : null}
+              {(isStudent && isEnrolled) || isCreator ? (
+                <Button
+                  variant="outline"
+                  size="large"
                   onClick={() => router.push("/courses")}
                 >
                   Ver outros cursos
@@ -219,6 +228,29 @@ export default function CourseDetailPage() {
           </>
         )}
 
+        {(isCreator || (isStudent && isEnrolled)) && (
+          <section className={styles.supportCard}>
+            <div>
+              <p className={styles.supportKicker}>Suporte do curso</p>
+              <h3>
+                {isCreator
+                  ? "Centralize dúvidas dos seus alunos"
+                  : "Precisa de ajuda? Fale com o criador"}
+              </h3>
+              <p>
+                {isCreator
+                  ? "Responda perguntas dos alunos e acompanhe o histórico de conversas."
+                  : "Envie mensagens sobre o conteúdo e receba respostas por email quando houver novidades."}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => router.push("/messages")}
+            >
+              {isCreator ? "Abrir mensagens" : "Enviar mensagem"}
+            </Button>
+          </section>
+        )}
         {(isCreator || (isStudent && isEnrolled)) && (
           <section className={styles.syllabus}>
             <header>

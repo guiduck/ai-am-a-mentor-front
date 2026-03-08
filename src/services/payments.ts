@@ -23,6 +23,13 @@ export interface Transaction {
   createdAt: string;
 }
 
+export interface TransactionsResponse {
+  items: Transaction[];
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
 export type PaymentMethod = "card" | "boleto";
 
 export interface PaymentIntent {
@@ -68,12 +75,32 @@ export async function getCreditBalance(): Promise<CreditBalance | null> {
 /**
  * Get user's transaction history
  */
-export async function getTransactions(): Promise<Transaction[]> {
-  const response = await API<Transaction[]>("credits/transactions");
+export async function getTransactions(
+  page: number = 1,
+  pageSize: number = 10
+): Promise<TransactionsResponse> {
+  const response = await API<Transaction[] | TransactionsResponse>(
+    `credits/transactions?page=${page}&pageSize=${pageSize}`
+  );
   if (response.error || !response.data) {
     console.error("Error getting transactions:", response.errorUserMessage);
-    return [];
+    return {
+      items: [],
+      page,
+      pageSize,
+      hasMore: false,
+    };
   }
+
+  if (Array.isArray(response.data)) {
+    return {
+      items: response.data,
+      page: 1,
+      pageSize: response.data.length,
+      hasMore: false,
+    };
+  }
+
   return response.data;
 }
 

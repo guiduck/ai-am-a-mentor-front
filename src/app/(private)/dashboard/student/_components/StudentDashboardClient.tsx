@@ -85,6 +85,10 @@ export default function StudentDashboardClient({
     router.push("/courses/enrolled");
   };
 
+  const handleMessages = () => {
+    router.push("/messages");
+  };
+
   const parsePrice = (price: string) => {
     const normalized = price
       .toString()
@@ -169,6 +173,9 @@ export default function StudentDashboardClient({
           </Button>
           <Button variant="outline" size="small" onClick={handleBrowseCourses}>
             Ajustar plano
+          </Button>
+          <Button variant="ghost" size="small" onClick={handleMessages}>
+            Mensagens
           </Button>
         </div>
       </section>

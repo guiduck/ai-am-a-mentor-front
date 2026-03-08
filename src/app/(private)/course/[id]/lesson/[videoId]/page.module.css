@@ -440,6 +440,19 @@
   margin-top: var(--space-4);
 }
 
+.supportSection {
+  margin-top: var(--space-4);
+}
+
+.supportContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: flex-start;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
 .progressNote {
   font-size: var(--text-sm);
   color: var(--text-secondary);

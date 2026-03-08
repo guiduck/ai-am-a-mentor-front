@@ -1,17 +1,38 @@
 import API from "@/lib/api";
 
+export interface UserApi {
+  id: string;
+  username: string;
+  email: string;
+  role: "creator" | "student";
+  emailNotificationsEnabled: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface User {
   id: string;
   username: string;
   email: string;
   role: "creator" | "student";
+  emailNotificationsEnabled: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
+/**
+ * Normaliza o usuário para consumo no frontend.
+ */
+function mapUser(user: UserApi): User {
+  return {
+    ...user,
+    emailNotificationsEnabled: user.emailNotificationsEnabled === 1,
+  };
+}
+
 export async function getUserById(userId: string): Promise<User | null> {
   try {
-    const response = await API<User>(`users/${userId}`, {
+    const response = await API<UserApi>(`users/${userId}`, {
       method: "GET",
     });
 
@@ -19,7 +40,7 @@ export async function getUserById(userId: string): Promise<User | null> {
       return null;
     }
 
-    return response.data;
+    return mapUser(response.data);
   } catch (error) {
     console.error("Error fetching user:", error);
     return null;
@@ -28,7 +49,7 @@ export async function getUserById(userId: string): Promise<User | null> {
 
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    const response = await API<User>("users/me", {
+    const response = await API<UserApi>("users/me", {
       method: "GET",
     });
 
@@ -36,7 +57,7 @@ export async function getCurrentUser(): Promise<User | null> {
       return null;
     }
 
-    return response.data;
+    return mapUser(response.data);
   } catch (error) {
     console.error("Error fetching current user:", error);
     return null;
@@ -47,13 +68,14 @@ export interface UpdateUserProfileData {
   username?: string;
   email?: string;
   password?: string;
+  emailNotificationsEnabled?: boolean;
 }
 
 export async function updateUserProfile(
   data: UpdateUserProfileData
 ): Promise<{ user: User | null; error: boolean; errorMessage?: string }> {
   try {
-    const response = await API<{ message: string; user: User }>("users/me", {
+    const response = await API<{ message: string; user: UserApi }>("users/me", {
       method: "PUT",
       data,
     });
@@ -67,7 +89,7 @@ export async function updateUserProfile(
     }
 
     return {
-      user: response.data.user,
+      user: mapUser(response.data.user),
       error: false,
     };
   } catch (error) {

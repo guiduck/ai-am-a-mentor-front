@@ -145,6 +145,11 @@ export default function CreatorBankSetup() {
                 <li key={item}>{item}</li>
               ))}
             </ul>
+            <div className={styles.notice}>
+              <strong>Importante:</strong> você pode começar a vender assim que
+              aceitar os termos. O repasse fica pendente até concluir o
+              recebimento no Stripe.
+            </div>
 
             {termsStatus.accepted ? (
               <div className={styles.termsAccepted}>
@@ -182,6 +187,10 @@ export default function CreatorBankSetup() {
               uma conta Stripe Connect. Isso permite que você receba o dinheiro
               diretamente na sua conta bancária.
             </p>
+            <div className={styles.notice}>
+              <strong>Venda liberada:</strong> você pode vender mesmo sem esta
+              etapa, mas o repasse ficará pendente até finalizar o cadastro.
+            </div>
             <div className={styles.benefits}>
               <div className={styles.benefit}>
                 <span>✓</span> Taxa conforme o seu plano (5% a 0%)
@@ -210,6 +219,10 @@ export default function CreatorBankSetup() {
               Você iniciou a configuração da sua conta, mas ainda não a
               completou. Finalize o cadastro para começar a receber pagamentos.
             </p>
+            <div className={styles.notice}>
+              <strong>Venda liberada:</strong> cursos podem ser vendidos, mas o
+              repasse fica pendente até concluir o Stripe.
+            </div>
             <div className={styles.statusItems}>
               <div className={`${styles.statusItem} ${status.chargesEnabled ? styles.complete : styles.pending}`}>
                 {status.chargesEnabled ? "✓" : "○"} Receber pagamentos
@@ -258,6 +271,9 @@ export default function CreatorBankSetup() {
 
             <div className={styles.feeInfo}>
               <strong>Taxa da plataforma:</strong> conforme seu plano (5% a 0%)
+            </div>
+            <div className={styles.notice}>
+              Pagamentos no MVP: cartão e boleto. Pix entra apenas após 60 dias.
             </div>
 
             <Button

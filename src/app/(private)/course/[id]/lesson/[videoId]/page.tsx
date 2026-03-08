@@ -569,6 +569,28 @@ export default function LessonPage() {
           </div>
         </div>
 
+        {/* Support Section */}
+        <div className={styles.supportSection}>
+          <Card variant="default">
+            <CardHeader>
+              <CardTitle>Fale com o criador</CardTitle>
+            </CardHeader>
+            <CardContent className={styles.supportContent}>
+              <p>
+                Envie dúvidas sobre esta aula e receba resposta pelo inbox e por
+                email.
+              </p>
+              <Button
+                variant="outline"
+                size="small"
+                onClick={() => router.push("/messages")}
+              >
+                Enviar mensagem
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Course Progress Section */}
         <div className={styles.progressSection}>
           <Card variant="default">

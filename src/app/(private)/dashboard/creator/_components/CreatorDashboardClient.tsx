@@ -288,7 +288,11 @@ export default function CreatorDashboardClient({
             Conteúdos recentes recebem 32% mais visualizações quando você envia
             um resumo semanal. Use este espaço para destacar novidades.
           </p>
-          <Button variant="outline" size="small" onClick={handleViewCourses}>
+          <Button
+            variant="outline"
+            size="small"
+            onClick={() => router.push("/messages")}
+          >
             Abrir centro de mensagens
           </Button>
         </div>

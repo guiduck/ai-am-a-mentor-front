@@ -168,6 +168,37 @@
   margin-top: var(--space-5);
 }
 
+.supportCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--color-gray-200);
+  box-shadow: var(--shadow-base);
+  padding: var(--space-5);
+}
+
+.supportKicker {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-primary-dark);
+  margin-bottom: var(--space-2);
+}
+
+.supportCard h3 {
+  margin: 0 0 var(--space-2) 0;
+  font-size: var(--text-xl);
+  color: var(--text-primary);
+}
+
+.supportCard p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
 .syllabus {
   background: var(--bg-secondary);
   border-radius: var(--radius-2xl);
@@ -289,6 +320,11 @@
 
   .heroMeta {
     grid-template-columns: 1fr;
+  }
+
+  .supportCard {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .lessonItem {
