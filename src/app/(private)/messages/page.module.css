@@ -5,18 +5,25 @@
 }
 
 .innerContainer {
-  max-width: 1200px;
+  max-width: 1380px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-4);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: 0 var(--space-1);
 }
 
 .header h1 {
   font-size: var(--text-2xl);
   font-weight: var(--font-bold);
   color: var(--text-primary);
-  margin: 0 0 var(--space-2) 0;
+  margin: 0;
 }
 
 .header p {
@@ -27,8 +34,9 @@
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(280px, 360px) 1fr;
-  gap: var(--space-5);
+  grid-template-columns: minmax(320px, 380px) 1fr;
+  gap: var(--space-3);
+  min-height: calc(100vh - 180px);
 }
 
 .sidebarPanel {
@@ -36,28 +44,52 @@
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-4);
-  background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
+  background: var(--bg-dark);
+  border-radius: var(--radius-2xl);
+  border: 1px solid color-mix(in srgb, var(--color-gray-100) 8%, transparent);
   min-height: 520px;
+  box-shadow: var(--shadow-lg);
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
 .sidebarHeader h2 {
   margin: 0 0 var(--space-1) 0;
   font-size: var(--text-lg);
-  color: var(--text-primary);
+  color: var(--color-gray-100);
 }
 
 .sidebarHeader p {
   margin: 0;
   font-size: var(--text-sm);
-  color: var(--text-secondary);
+  color: color-mix(in srgb, var(--color-gray-100) 62%, transparent);
+}
+
+.sidebarBadge {
+  min-width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--color-primary) 22%, transparent);
+  color: var(--color-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
 }
 
 .startForm {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--color-gray-100) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-gray-100) 7%, transparent);
 }
 
 .formGroup {
@@ -66,14 +98,18 @@
   gap: var(--space-2);
 }
 
+.formGroup label {
+  color: var(--color-gray-100);
+}
+
 .select,
 .textarea {
   width: 100%;
   padding: var(--space-3);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  border-radius: var(--radius-xl);
+  border: 1px solid color-mix(in srgb, var(--color-gray-100) 12%, transparent);
+  background: color-mix(in srgb, var(--color-gray-900) 78%, white 22%);
+  color: var(--color-gray-100);
   font-size: var(--text-sm);
 }
 
@@ -84,12 +120,17 @@
 
 .helperText {
   font-size: var(--text-sm);
-  color: var(--text-secondary);
+  color: color-mix(in srgb, var(--color-gray-100) 68%, transparent);
 }
 
 .startingInfo {
   font-size: var(--text-xs);
-  color: var(--text-secondary);
+  color: color-mix(in srgb, var(--color-primary) 86%, white 14%);
+}
+
+.inlineError {
+  font-size: var(--text-sm);
+  color: #ffb4b4;
 }
 
 .conversationGroups {
@@ -110,7 +151,7 @@
   font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--text-tertiary);
+  color: color-mix(in srgb, var(--color-gray-100) 42%, transparent);
 }
 
 .conversationList {
@@ -122,21 +163,21 @@
 .conversationItem {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-3);
   padding: var(--space-3);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-xl);
   border: 1px solid transparent;
-  background: var(--bg-secondary);
+  background: color-mix(in srgb, var(--color-gray-100) 4%, transparent);
   text-align: left;
   transition: var(--transition-base);
 }
 
 .conversationAvatar {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
+  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  color: var(--color-gray-100);
   display: grid;
   place-items: center;
   font-size: var(--text-xs);
@@ -160,17 +201,19 @@
 }
 
 .conversationItem:hover {
-  border-color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 60%, transparent);
+  transform: translateY(-1px);
 }
 
 .conversationActive {
-  border-color: var(--color-primary);
-  background: var(--bg-tertiary);
+  border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  box-shadow: var(--shadow-md);
 }
 
 .conversationName {
   font-weight: var(--font-semibold);
-  color: var(--text-primary);
+  color: var(--color-gray-100);
 }
 
 .unreadBadge {
@@ -186,46 +229,51 @@
 
 .conversationDate {
   font-size: var(--text-xs);
-  color: var(--text-tertiary);
+  color: color-mix(in srgb, var(--color-gray-100) 55%, transparent);
 }
 
 .chatPanel {
   display: flex;
   flex-direction: column;
   min-height: 520px;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 25%),
+    linear-gradient(180deg, #1f2c33 0%, #111b21 100%);
+  border-radius: var(--radius-2xl);
+  border: 1px solid color-mix(in srgb, var(--color-gray-100) 8%, transparent);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
 }
 
 .chatHeader {
   padding: var(--space-4);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-gray-100) 8%, transparent);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  background: color-mix(in srgb, #111b21 80%, white 20%);
 }
 
 .chatHeader h3 {
   margin: 0;
   font-size: var(--text-lg);
-  color: var(--text-primary);
+  color: var(--color-gray-100);
 }
 
 .chatSubHeader {
   display: block;
   margin-top: var(--space-1);
   font-size: var(--text-sm);
-  color: var(--text-secondary);
+  color: color-mix(in srgb, var(--color-gray-100) 62%, transparent);
 }
 
 .chatAvatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  color: var(--color-gray-100);
   display: grid;
   place-items: center;
   font-size: var(--text-sm);
@@ -236,6 +284,10 @@
   flex: 1;
   padding: var(--space-4);
   overflow: hidden;
+  background:
+    radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--color-gray-100) 3%, transparent), transparent 16%),
+    radial-gradient(circle at 80% 10%, color-mix(in srgb, var(--color-gray-100) 3%, transparent), transparent 18%),
+    linear-gradient(180deg, #0b141a 0%, #111b21 100%);
 }
 
 .messageList {
@@ -244,23 +296,25 @@
   gap: var(--space-3);
   height: 100%;
   overflow-y: auto;
+  padding-right: var(--space-2);
 }
 
 .messageBubble {
   max-width: 70%;
-  padding: var(--space-3);
-  border-radius: var(--radius-lg);
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-xl);
+  background: #202c33;
+  color: var(--color-gray-100);
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  box-shadow: var(--shadow-sm);
 }
 
 .messageMine {
   align-self: flex-end;
-  background: var(--color-primary);
-  color: var(--color-gray-900);
+  background: #005c4b;
+  color: #e9edef;
 }
 
 .messageOther {
@@ -275,25 +329,80 @@
 
 .emptyState {
   text-align: center;
-  color: var(--text-secondary);
+  color: color-mix(in srgb, var(--color-gray-100) 62%, transparent);
+}
+
+.chatEmptyState {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  text-align: center;
+  color: color-mix(in srgb, var(--color-gray-100) 72%, transparent);
+}
+
+.chatEmptyState strong {
+  color: var(--color-gray-100);
+}
+
+.chatEmptyState p {
+  max-width: 360px;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.chatEmptyIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--color-gray-100) 8%, transparent);
+  font-size: 1.5rem;
 }
 
 .chatComposer {
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid color-mix(in srgb, var(--color-gray-100) 8%, transparent);
   padding: var(--space-4);
   display: flex;
   gap: var(--space-3);
   align-items: center;
+  background: #111b21;
 }
 
 .chatComposer .textarea {
   flex: 1;
-  min-height: 48px;
+  min-height: 52px;
   resize: none;
+  border-radius: var(--radius-full);
+  padding-inline: var(--space-4);
+}
+
+.composerAction {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-gray-100) 8%, transparent);
+  color: var(--color-gray-100);
+  font-size: 1.25rem;
+  cursor: pointer;
 }
 
 @media (max-width: 960px) {
   .layout {
     grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .sidebarPanel,
+  .chatPanel {
+    min-height: auto;
+  }
+
+  .chatBody {
+    min-height: 320px;
   }
 }

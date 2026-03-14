@@ -63,8 +63,17 @@ export interface SetupIntentResult {
 /**
  * Get user's credit balance
  */
-export async function getCreditBalance(): Promise<CreditBalance | null> {
-  const response = await API<CreditBalance>("credits/balance");
+export async function getCreditBalance(options?: {
+  refreshSubscriptionCredits?: boolean;
+}): Promise<CreditBalance | null> {
+  const params = new URLSearchParams();
+
+  if (options?.refreshSubscriptionCredits) {
+    params.set("refreshSubscriptionCredits", "true");
+  }
+
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  const response = await API<CreditBalance>(`credits/balance${suffix}`);
   if (response.error || !response.data) {
     console.error("Error getting credit balance:", response.errorUserMessage);
     return null;

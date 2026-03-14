@@ -36,6 +36,7 @@ export default function MessagesPage() {
   const [messageDraft, setMessageDraft] = useState("");
   const [startCourseId, setStartCourseId] = useState("");
   const [startRecipientId, setStartRecipientId] = useState("");
+  const [startError, setStartError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const lastMessageAtRef = useRef<string | null>(null);
@@ -125,8 +126,26 @@ export default function MessagesPage() {
     studentContacts,
   ]);
 
+  const resolveAutoRecipientId = () => {
+    if (!startCourseId) {
+      return null;
+    }
+
+    if (isCreator) {
+      return startRecipientId || null;
+    }
+
+    const contact = studentContacts.find(
+      (item) => item.courseId === startCourseId
+    );
+
+    return contact?.creatorId || null;
+  };
+
   const canCompose =
     !!selectedConversation || (!!startCourseId && !!resolveAutoRecipientId());
+
+  const availableCourses = isCreator ? creatorContacts : studentContacts;
 
   const headerParticipantName =
     selectedConversation?.participantName || selectedStartParticipant?.name || "";
@@ -144,22 +163,6 @@ export default function MessagesPage() {
     const first = parts[0]?.[0] || "";
     const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
     return `${first}${last}`.toUpperCase();
-  };
-
-  const resolveAutoRecipientId = () => {
-    if (!startCourseId) {
-      return null;
-    }
-
-    if (isCreator) {
-      return startRecipientId || null;
-    }
-
-    const contact = studentContacts.find(
-      (item) => item.courseId === startCourseId
-    );
-
-    return contact?.creatorId || null;
   };
 
   const loadConversations = async () => {
@@ -235,6 +238,7 @@ export default function MessagesPage() {
     }
 
     setIsStarting(true);
+    setStartError(null);
     const result = await startConversation({
       courseId,
       recipientId: isCreator ? participantId : undefined,
@@ -244,6 +248,7 @@ export default function MessagesPage() {
 
     if ("error" in result) {
       autoStartKeyRef.current = null;
+      setStartError(result.error);
       toast.error(result.error);
       return;
     }
@@ -271,6 +276,7 @@ export default function MessagesPage() {
       }
 
       setIsSending(true);
+      setStartError(null);
       const result = await startConversation({
         courseId: startCourseId,
         recipientId: isCreator ? participantId || undefined : undefined,
@@ -279,6 +285,7 @@ export default function MessagesPage() {
       setIsSending(false);
 
       if ("error" in result) {
+        setStartError(result.error);
         toast.error(result.error);
         return;
       }
@@ -374,6 +381,14 @@ export default function MessagesPage() {
   ]);
 
   useEffect(() => {
+    if (availableCourses.length === 0 || startCourseId) {
+      return;
+    }
+
+    setStartCourseId(availableCourses[0].courseId);
+  }, [availableCourses, startCourseId]);
+
+  useEffect(() => {
     if (selectedCourseContacts.length === 0) {
       setStartRecipientId("");
       return;
@@ -393,7 +408,7 @@ export default function MessagesPage() {
       <div className={styles.innerContainer}>
         <div className={styles.header}>
           <h1>Mensagens</h1>
-          <p>Converse com seus alunos ou criadores</p>
+          <p>Converse com seus alunos ou criadores em uma interface contínua.</p>
         </div>
 
         <div className={styles.layout}>
@@ -401,8 +416,9 @@ export default function MessagesPage() {
             <div className={styles.sidebarHeader}>
               <div>
                 <h2>Conversas</h2>
-                <p>Selecione um aluno para conversar.</p>
+                <p>Os cursos funcionam como grupos.</p>
               </div>
+              <span className={styles.sidebarBadge}>{conversations.length}</span>
             </div>
 
             <div className={styles.startForm}>
@@ -460,6 +476,8 @@ export default function MessagesPage() {
                   Preparando conversa...
                 </span>
               )}
+
+              {startError && <p className={styles.inlineError}>{startError}</p>}
             </div>
 
             <div className={styles.conversationGroups}>
@@ -575,14 +593,22 @@ export default function MessagesPage() {
                   <div ref={messagesEndRef} />
                 </div>
               ) : (
-                <div className={styles.emptyState}>
-                  Selecione um aluno para iniciar uma conversa.
+                <div className={styles.chatEmptyState}>
+                  <div className={styles.chatEmptyIcon}>💬</div>
+                  <strong>Escolha um curso e um aluno</strong>
+                  <p>
+                    A conversa aparece aqui e o campo de mensagem fica disponível
+                    no rodapé.
+                  </p>
                 </div>
               )}
             </div>
 
             {canCompose && (
               <div className={styles.chatComposer}>
+                <button type="button" className={styles.composerAction}>
+                  +
+                </button>
                 <textarea
                   className={styles.textarea}
                   rows={2}

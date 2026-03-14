@@ -55,13 +55,20 @@ export default function PaymentsPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [plansData, subscriptionData, creditBalanceData, transactionsData] =
-        await Promise.all([
-          getSubscriptionPlans(user?.role as "creator" | "student"),
-          getUserSubscription(),
-          getCreditBalance(),
-          getTransactions(1, transactionsPageSize),
-        ]);
+      const [plansData, subscriptionData, transactionsData] = await Promise.all([
+        getSubscriptionPlans(user?.role as "creator" | "student"),
+        getUserSubscription(),
+        getTransactions(1, transactionsPageSize),
+      ]);
+
+      const shouldRefreshSubscriptionCredits =
+        !!subscriptionData.subscription &&
+        parseFloat(subscriptionData.subscription.plan.price) > 0 &&
+        subscriptionData.subscription.plan.features.support !== "community";
+
+      const creditBalanceData = await getCreditBalance({
+        refreshSubscriptionCredits: shouldRefreshSubscriptionCredits,
+      });
 
       setPlans(plansData);
       setSubscription(subscriptionData.subscription);
